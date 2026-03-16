@@ -1,0 +1,34 @@
+{
+    "manifest_version": 3,
+    "name": "TarHeelRatings",
+    "version": "1.0",
+    "description": "Chrome extension that embeds RateMyProfessors data directly into UNC Chapel Hill's ConnectCarolina registration portal",
+    "homepage_url": "https://github.com/jasoncharwin/TarHeelRatings",
+    "permissions": ["storage"],
+    "content_scripts": [
+        {
+            "matches": [
+        "*://selfservice.unc.edu/StudentRegistrationSsb/*"
+            ],
+            "js": ["extension/content.js"],
+            "css": ["extension/content.css"]
+        }
+    ],
+    "background" : {
+        "service_worker": "extension/rmp.js"
+    },
+    "host_permissions": [
+        "https://www.ratemyprofessors.com/*"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": ["fonts/*"],
+            "matches": ["*://selfservice.unc.edu/*"]
+        }
+    ],
+    "icons": {
+        "16": "icons/logo128px.png",
+        "48": "icons/logo128px.png",
+        "128": "icons/logo128px.png"
+    }
+}
