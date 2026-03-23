@@ -7,16 +7,17 @@
     <meta name="description" content="TarHeelRatings brings RateMyProfessors information directly into UNC Chapel Hill's ConnectCarolina registration experience.">
     <style>
         :root {
-            --blue: #4b9cd3;
-            --navy: #13294b;
-            --sky: #dfeef9;
-            --paper: #f9fbfe;
-            --ink: #16253d;
-            --muted: #63758c;
-            --line: #d7e2ee;
-            --card: #ffffff;
-            --shadow: 0 12px 30px rgba(19, 41, 75, 0.08);
-            --radius: 18px;
+            --cc-navy: #1f3557;
+            --cc-navy-2: #253d62;
+            --cc-blue: #4b9cd3;
+            --cc-bg: #f5f6fb;
+            --cc-panel: #ffffff;
+            --cc-panel-soft: #ecebf8;
+            --cc-line: #dddfea;
+            --cc-text: #1c2740;
+            --cc-muted: #62708a;
+            --cc-shadow: 0 8px 24px rgba(19, 41, 75, 0.08);
+            --radius: 14px;
         }
 
         * {
@@ -30,13 +31,13 @@
         body {
             margin: 0;
             font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-            color: var(--ink);
-            background: var(--paper);
+            color: var(--cc-text);
+            background: var(--cc-bg);
             line-height: 1.6;
         }
 
         a {
-            color: var(--navy);
+            color: var(--cc-navy);
             text-decoration: none;
         }
 
@@ -44,492 +45,502 @@
             text-decoration: underline;
         }
 
-        .site-width {
-            width: min(1100px, calc(100% - 32px));
-            margin: 0 auto;
+        .layout {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 248px minmax(0, 1fr);
         }
 
-        .topbar {
-            border-bottom: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(8px);
-            position: sticky;
-            top: 0;
-            z-index: 10;
+        .sidebar {
+            background: var(--cc-navy);
+            color: rgba(255, 255, 255, 0.92);
+            padding: 18px 14px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        .topbar-inner {
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-brand img {
+            width: 36px;
+            height: 36px;
+            display: block;
+        }
+
+        .sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sidebar-brand-text strong {
+            font-size: 18px;
+            letter-spacing: -0.03em;
+        }
+
+        .sidebar-brand-text span {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.68);
+        }
+
+        .sidebar-nav {
+            display: grid;
+            gap: 8px;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 11px 12px;
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.86);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav-item.active {
+            background: #fff;
+            color: var(--cc-navy);
+        }
+
+        .nav-item:hover {
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-item.active:hover {
+            background: #fff;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .main {
+            min-width: 0;
+        }
+
+        .main-topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 16px;
-            min-height: 72px;
+            padding: 16px 24px;
+            background: #fff;
+            border-bottom: 1px solid var(--cc-line);
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            color: var(--navy);
-        }
-
-        .brand img {
-            width: 42px;
-            height: 42px;
-            display: block;
-        }
-
-        .topnav {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            flex-wrap: wrap;
-            font-size: 14px;
-        }
-
-        .topnav a {
-            color: var(--muted);
-            font-weight: 600;
-        }
-
-        .hero {
-            padding: 56px 0 28px;
-        }
-
-        .hero-grid {
-            display: grid;
-            grid-template-columns: 1.15fr 0.85fr;
-            gap: 28px;
-            align-items: start;
-        }
-
-        .kicker {
-            display: inline-block;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--blue);
-            margin-bottom: 12px;
-        }
-
-        h1 {
-            margin: 0 0 16px;
-            font-size: clamp(40px, 6vw, 62px);
-            line-height: 0.96;
-            letter-spacing: -0.05em;
-            color: var(--navy);
-            max-width: 11ch;
-        }
-
-        .hero-copy p {
+        .main-topbar h1 {
             margin: 0;
-            color: var(--muted);
-            font-size: 18px;
-            max-width: 58ch;
+            font-size: 28px;
+            letter-spacing: -0.04em;
+            color: var(--cc-text);
         }
 
-        .button-row {
+        .topbar-actions {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             flex-wrap: wrap;
-            margin-top: 24px;
         }
 
         .button {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 44px;
-            padding: 0 18px;
-            border-radius: 999px;
-            font-weight: 700;
-            border: 1px solid var(--line);
+            min-height: 40px;
+            padding: 0 16px;
+            border-radius: 8px;
+            border: 1px solid var(--cc-line);
             background: #fff;
-            color: var(--navy);
-            box-shadow: none;
+            color: var(--cc-navy);
+            font-size: 14px;
+            font-weight: 700;
         }
 
         .button.primary {
-            background: var(--navy);
-            border-color: var(--navy);
+            background: var(--cc-navy);
+            border-color: var(--cc-navy);
             color: #fff;
-        }
-
-        .button.secondary {
-            background: #fff;
-            color: var(--navy);
         }
 
         .button:hover {
             text-decoration: none;
         }
 
-        .hero-side {
-            background: var(--card);
-            border: 1px solid var(--line);
+        .content {
+            padding: 24px;
+        }
+
+        .hero-card {
+            background: var(--cc-panel);
+            border: 1px solid var(--cc-line);
+            box-shadow: var(--cc-shadow);
             border-radius: var(--radius);
-            box-shadow: var(--shadow);
             overflow: hidden;
+            margin-bottom: 20px;
         }
 
-        .hero-side img {
+        .hero-card-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--cc-line);
+            background: #fff;
+        }
+
+        .kicker {
             display: block;
-            width: 100%;
-            height: auto;
-        }
-
-        .hero-note {
-            padding: 14px 16px 16px;
-            border-top: 1px solid var(--line);
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        section {
-            padding: 28px 0;
-        }
-
-        .section-head {
-            display: grid;
-            grid-template-columns: 220px 1fr;
-            gap: 22px;
-            align-items: start;
-            padding: 18px 0;
-            border-top: 1px solid var(--line);
-        }
-
-        .section-label {
-            font-size: 13px;
+            margin-bottom: 10px;
+            font-size: 12px;
             font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: var(--blue);
+            color: var(--cc-blue);
         }
 
-        .section-head h2 {
-            margin: 0 0 8px;
-            font-size: clamp(28px, 4vw, 40px);
-            line-height: 1.02;
-            letter-spacing: -0.04em;
-            color: var(--navy);
-        }
-
-        .section-head p {
-            margin: 0;
-            color: var(--muted);
-            max-width: 70ch;
-        }
-
-        .feature-grid,
-        .info-grid {
-            display: grid;
-            gap: 16px;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .info-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .card {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 22px;
-            box-shadow: var(--shadow);
-        }
-
-        .card h3 {
+        .hero-card-header h2 {
             margin: 0 0 10px;
-            font-size: 20px;
+            font-size: clamp(32px, 4vw, 48px);
+            line-height: 1.02;
+            letter-spacing: -0.05em;
+            color: var(--cc-text);
+            max-width: 13ch;
+        }
+
+        .hero-card-header p {
+            margin: 0;
+            max-width: 68ch;
+            color: var(--cc-muted);
+            font-size: 17px;
+        }
+
+        .hero-card-actions {
+            padding: 16px 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hero-card-visual {
+            padding: 18px 20px 20px;
+        }
+
+        .hero-card-visual img {
+            width: 100%;
+            display: block;
+            border: 1px solid var(--cc-line);
+            border-radius: 10px;
+            background: #fff;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .stack {
+            display: grid;
+            gap: 18px;
+        }
+
+        .panel {
+            background: var(--cc-panel);
+            border: 1px solid var(--cc-line);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--cc-shadow);
+        }
+
+        .panel-head {
+            background: var(--cc-panel-soft);
+            border-bottom: 1px solid var(--cc-line);
+            padding: 14px 16px;
+        }
+
+        .panel-head h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
             letter-spacing: -0.03em;
-            color: var(--navy);
+            color: var(--cc-text);
         }
 
-        .card p,
-        .card li {
-            color: var(--muted);
+        .panel-body {
+            padding: 16px;
         }
 
-        .card ul {
+        .panel-body p,
+        .panel-body li {
+            margin-top: 0;
+            color: var(--cc-muted);
+        }
+
+        .panel-body ul {
             margin: 0;
             padding-left: 18px;
         }
 
-        .policy-intro {
-            background: var(--sky);
-            border: 1px solid #c7ddf0;
-            border-radius: var(--radius);
-            padding: 18px 20px;
-            color: var(--ink);
+        .meta-note {
+            padding: 14px 16px;
+            background: #f9fbff;
+            border: 1px solid var(--cc-line);
+            border-radius: 10px;
+            color: var(--cc-muted);
         }
 
-        .policy-grid {
+        .privacy-grid {
             display: grid;
             gap: 16px;
-            margin-top: 16px;
-        }
-
-        .policy-grid .card {
-            box-shadow: none;
-        }
-
-        .policy-grid h3 {
-            font-size: 19px;
-        }
-
-        footer {
-            padding: 36px 0 48px;
         }
 
         .footer {
+            margin-top: 20px;
+            padding: 18px 0 8px;
+            border-top: 1px solid var(--cc-line);
+            color: var(--cc-muted);
+            font-size: 14px;
             display: flex;
             justify-content: space-between;
             gap: 16px;
-            padding-top: 18px;
-            border-top: 1px solid var(--line);
-            color: var(--muted);
-            font-size: 14px;
         }
 
-        @media (max-width: 920px) {
-            .hero-grid,
-            .section-head,
-            .feature-grid,
-            .info-grid,
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                gap: 12px;
+            }
+
+            .dashboard-grid,
             .footer {
                 grid-template-columns: 1fr;
                 display: grid;
             }
 
-            h1 {
-                max-width: none;
-            }
-
-            .topbar-inner {
-                padding: 10px 0;
-                align-items: flex-start;
-                flex-direction: column;
+            .content,
+            .main-topbar {
+                padding: 18px;
             }
         }
     </style>
 </head>
 <body>
-    <header class="topbar">
-        <div class="site-width topbar-inner">
-            <div class="brand">
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
                 <img src="icons/logo128px.png" alt="TarHeelRatings logo">
-                <span>TarHeelRatings</span>
+                <div class="sidebar-brand-text">
+                    <strong>TarHeelRatings</strong>
+                    <span>UNC registration helper</span>
+                </div>
             </div>
-            <nav class="topnav">
-                <a href="#features">Features</a>
-                <a href="#how-it-works">How it works</a>
-                <a href="#privacy">Privacy policy</a>
-                <a href="https://github.com/jasoncharwin/TarHeelRatings" target="_blank" rel="noreferrer">GitHub</a>
+
+            <nav class="sidebar-nav">
+                <a class="nav-item active" href="#overview">Overview</a>
+                <a class="nav-item" href="#features">Features</a>
+                <a class="nav-item" href="#how-it-works">How it works</a>
+                <a class="nav-item" href="#privacy">Privacy policy</a>
+                <a class="nav-item" href="https://github.com/jasoncharwin/TarHeelRatings" target="_blank" rel="noreferrer">GitHub</a>
             </nav>
-        </div>
-    </header>
 
-    <main class="site-width">
-        <section class="hero">
-            <div class="hero-grid">
-                <div class="hero-copy">
-                    <div class="kicker">Built for UNC registration season</div>
-                    <h1>RMP info where you actually need it.</h1>
-                    <p>
-                        TarHeelRatings drops RateMyProfessors data right into ConnectCarolina so you
-                        can stop bouncing between tabs and just make your schedule.
-                    </p>
-                    <div class="button-row">
-                        <a class="button primary" href="https://github.com/jasoncharwin/TarHeelRatings" target="_blank" rel="noreferrer">View project</a>
-                        <a class="button secondary" href="#privacy">Privacy policy</a>
+            <div class="sidebar-footer">
+                Made by a UNC student.<br>
+                Not affiliated with UNC or RMP.
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="main-topbar">
+                <h1>Dashboard</h1>
+                <div class="topbar-actions">
+                    <a class="button" href="#privacy">Privacy policy</a>
+                    <a class="button primary" href="https://github.com/jasoncharwin/TarHeelRatings" target="_blank" rel="noreferrer">View project</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <section id="overview" class="hero-card">
+                    <div class="hero-card-header">
+                        <span class="kicker">Built for registration season</span>
+                        <h2>RMP info where you actually need it.</h2>
+                        <p>
+                            TarHeelRatings puts RateMyProfessors data directly inside ConnectCarolina so
+                            you can stop flipping between tabs and just build your schedule.
+                        </p>
+                    </div>
+                    <div class="hero-card-actions">
+                        <a class="button primary" href="https://github.com/jasoncharwin/TarHeelRatings" target="_blank" rel="noreferrer">GitHub repo</a>
+                        <a class="button" href="mailto:jason.charwin360@gmail.com">Email me</a>
+                    </div>
+                    <div class="hero-card-visual">
+                        <img src="icons/screenshots/tarheel-marquee-promo-1400x560.png" alt="TarHeelRatings promo banner">
+                    </div>
+                </section>
+
+                <div class="dashboard-grid">
+                    <div class="stack">
+                        <section id="features" class="panel">
+                            <div class="panel-head">
+                                <h3>What it does</h3>
+                            </div>
+                            <div class="panel-body">
+                                <p>
+                                    The whole point is to keep instructor context in the same place you
+                                    are already searching and enrolling.
+                                </p>
+                                <ul>
+                                    <li>Shows rating info next to professor names.</li>
+                                    <li>Adds hover details like difficulty, rating count, and would-take-again.</li>
+                                    <li>Supports multiple instructors in the same listing.</li>
+                                    <li>Caches recent lookups locally so repeat loads are faster.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section id="how-it-works" class="panel">
+                            <div class="panel-head">
+                                <h3>How it works</h3>
+                            </div>
+                            <div class="panel-body">
+                                <p>
+                                    On supported ConnectCarolina pages, the extension reads instructor names,
+                                    requests public data from RateMyProfessors, and injects those results back
+                                    into the interface.
+                                </p>
+                                <div class="meta-note">
+                                    It only runs where it needs to. It is not trying to be a whole student portal.
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="panel">
+                            <div class="panel-head">
+                                <h3>Good to know</h3>
+                            </div>
+                            <div class="panel-body">
+                                <ul>
+                                    <li>Some professors will not match perfectly with RMP.</li>
+                                    <li>Low rating counts can be noisy.</li>
+                                    <li>RMP data is best used as context, not as the final answer.</li>
+                                </ul>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="stack">
+                        <section id="privacy" class="panel">
+                            <div class="panel-head">
+                                <h3>Privacy policy</h3>
+                            </div>
+                            <div class="panel-body">
+                                <p>
+                                    Short version: this extension is here to show professor ratings, not to
+                                    collect your life story.
+                                </p>
+                                <div class="meta-note">
+                                    <strong>Effective date:</strong> March 2026<br>
+                                    <strong>Contact:</strong> <a href="mailto:jason.charwin360@gmail.com">jason.charwin360@gmail.com</a>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="privacy-grid">
+                            <article class="panel">
+                                <div class="panel-head">
+                                    <h3>What gets processed</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <p>
+                                        TarHeelRatings may process website content from supported ConnectCarolina
+                                        pages, like instructor names and class listing information, only to match
+                                        those instructors with publicly available RateMyProfessors data.
+                                    </p>
+                                    <p>
+                                        It does not intentionally collect account credentials, payment information,
+                                        private communications, or unrelated browsing history.
+                                    </p>
+                                </div>
+                            </article>
+
+                            <article class="panel">
+                                <div class="panel-head">
+                                    <h3>Local storage</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <p>
+                                        The extension uses Chrome local storage to keep a temporary cache of rating
+                                        lookups. This helps pages load faster and avoids re-requesting the same data
+                                        over and over.
+                                    </p>
+                                </div>
+                            </article>
+
+                            <article class="panel">
+                                <div class="panel-head">
+                                    <h3>Third-party requests</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <p>
+                                        TarHeelRatings sends requests to RateMyProfessors for publicly available
+                                        rating data tied to instructors shown on supported pages. It does not
+                                        download or execute remote JavaScript or WebAssembly.
+                                    </p>
+                                </div>
+                            </article>
+
+                            <article class="panel">
+                                <div class="panel-head">
+                                    <h3>Data use commitments</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <ul>
+                                        <li>TarHeelRatings does not sell user data.</li>
+                                        <li>TarHeelRatings does not use or transfer user data for advertising.</li>
+                                        <li>TarHeelRatings does not use or transfer user data for purposes unrelated to the extension's single purpose.</li>
+                                        <li>TarHeelRatings does not use or transfer user data to determine creditworthiness or for lending purposes.</li>
+                                    </ul>
+                                </div>
+                            </article>
+
+                            <article class="panel">
+                                <div class="panel-head">
+                                    <h3>Policy updates</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <p>
+                                        This policy may change if the extension changes, platform requirements change,
+                                        or legal requirements change. If that happens, the updated version will be
+                                        posted on this page.
+                                    </p>
+                                </div>
+                            </article>
+                        </section>
                     </div>
                 </div>
-                <aside class="hero-side">
-                    <img src="icons/screenshots/tarheel-marquee-promo-1400x560.png" alt="TarHeelRatings promo banner">
-                    <div class="hero-note">
-                        Independent student project. Not affiliated with UNC Chapel Hill or RateMyProfessors.
+
+                <footer class="footer">
+                    <div>TarHeelRatings is a student-built project for UNC registration.</div>
+                    <div>
+                        <a href="https://github.com/jasoncharwin/TarHeelRatings" target="_blank" rel="noreferrer">GitHub</a>
+                        &nbsp;|&nbsp;
+                        <a href="mailto:jason.charwin360@gmail.com">Email</a>
                     </div>
-                </aside>
+                </footer>
             </div>
-        </section>
-
-        <section id="features">
-            <div class="section-head">
-                <div class="section-label">Features</div>
-                <div>
-                    <h2>Made to save clicks, not reinvent registration.</h2>
-                    <p>
-                        The goal is simple: keep professor context inside the pages you already use,
-                        especially class search and shopping cart.
-                    </p>
-                </div>
-            </div>
-            <div class="feature-grid">
-                <article class="card">
-                    <h3>Inline professor ratings</h3>
-                    <p>
-                        Instructor names get a rating marker right in the page, plus a hover summary with
-                        overall rating, difficulty, rating count, and would-take-again data when available.
-                    </p>
-                </article>
-                <article class="card">
-                    <h3>Works in actual UNC flows</h3>
-                    <p>
-                        Built around the pages UNC students actually touch: class search, shopping cart,
-                        and multi-instructor course listings.
-                    </p>
-                </article>
-                <article class="card">
-                    <h3>Local cache for speed</h3>
-                    <p>
-                        Recent lookups are cached in the browser so the same names do not need to be
-                        fetched over and over again.
-                    </p>
-                </article>
-            </div>
-        </section>
-
-        <section id="how-it-works">
-            <div class="section-head">
-                <div class="section-label">How it works</div>
-                <div>
-                    <h2>Reads the instructor names, fetches public RMP data, and drops it back into the page.</h2>
-                    <p>
-                        It only runs on supported ConnectCarolina pages. It does not touch your account
-                        settings or try to do anything outside the extension's one job.
-                    </p>
-                </div>
-            </div>
-            <div class="info-grid">
-                <article class="card">
-                    <h3>Why people use it</h3>
-                    <ul>
-                        <li>Less tab switching during registration.</li>
-                        <li>Faster comparison between sections and instructors.</li>
-                        <li>A quick reality check before locking in a schedule.</li>
-                    </ul>
-                </article>
-                <article class="card">
-                    <h3>Good to know</h3>
-                    <ul>
-                        <li>Some professors will not have a clean match on RateMyProfessors.</li>
-                        <li>Low rating counts can be noisy.</li>
-                        <li>RMP data should be used as context, not as the whole decision.</li>
-                    </ul>
-                </article>
-            </div>
-        </section>
-
-        <section id="privacy">
-            <div class="section-head">
-                <div class="section-label">Privacy policy</div>
-                <div>
-                    <h2>Short version: this extension exists to show ratings, not collect your life story.</h2>
-                    <p>
-                        The policy below is the public privacy policy for TarHeelRatings and is intended
-                        for Chrome Web Store review and user reference.
-                    </p>
-                </div>
-            </div>
-
-            <div class="policy-intro">
-                <strong>Effective date:</strong> March 2026<br>
-                <strong>Contact:</strong> <a href="mailto:jason.charwin360@gmail.com">jason.charwin360@gmail.com</a>
-            </div>
-
-            <div class="policy-grid">
-                <article class="card">
-                    <h3>Overview</h3>
-                    <p>
-                        TarHeelRatings is a browser extension that displays RateMyProfessors information
-                        inside UNC Chapel Hill's ConnectCarolina registration experience. This policy explains
-                        what the extension processes, what it stores locally, and how that information is used.
-                    </p>
-                </article>
-
-                <article class="card">
-                    <h3>What the extension does</h3>
-                    <ul>
-                        <li>Reads instructor names and related class listing content on supported ConnectCarolina pages.</li>
-                        <li>Requests publicly available professor rating data from RateMyProfessors.</li>
-                        <li>Displays rating summaries and hover details in the page interface.</li>
-                        <li>Caches recent lookup results locally to make repeat loads faster.</li>
-                    </ul>
-                </article>
-
-                <article class="card">
-                    <h3>What information is processed</h3>
-                    <p>
-                        TarHeelRatings may process website content from supported ConnectCarolina pages,
-                        such as instructor names and related class information, only for the purpose of
-                        matching instructors with publicly available RateMyProfessors data.
-                    </p>
-                    <p>
-                        TarHeelRatings does not intentionally collect account credentials, payment details,
-                        health information, private communications, or unrelated browsing history.
-                    </p>
-                </article>
-
-                <article class="card">
-                    <h3>Local storage</h3>
-                    <p>
-                        The extension uses Chrome local storage to keep a temporary cache of professor rating
-                        lookup results. This improves performance and avoids unnecessary repeat requests for
-                        the same instructor data.
-                    </p>
-                </article>
-
-                <article class="card">
-                    <h3>Third-party requests</h3>
-                    <p>
-                        TarHeelRatings sends requests to RateMyProfessors to retrieve publicly available
-                        rating information for instructors shown on supported pages. The extension does not
-                        download or execute remote JavaScript or WebAssembly.
-                    </p>
-                </article>
-
-                <article class="card">
-                    <h3>Data use commitments</h3>
-                    <ul>
-                        <li>TarHeelRatings does not sell user data.</li>
-                        <li>TarHeelRatings does not use or transfer user data for advertising.</li>
-                        <li>TarHeelRatings does not use or transfer user data for purposes unrelated to its single purpose.</li>
-                        <li>TarHeelRatings does not use or transfer user data to determine creditworthiness or for lending purposes.</li>
-                    </ul>
-                </article>
-
-                <article class="card">
-                    <h3>Retention</h3>
-                    <p>
-                        Cached lookup results are retained locally for a limited time and may be overwritten
-                        or removed automatically as the cache rotates.
-                    </p>
-                </article>
-
-                <article class="card">
-                    <h3>Updates</h3>
-                    <p>
-                        This policy may be updated if the extension changes, platform requirements change,
-                        or legal requirements change. Any updated version will be posted on this page.
-                    </p>
-                </article>
-            </div>
-        </section>
-    </main>
-
-    <footer class="site-width">
-        <div class="footer">
-            <div>TarHeelRatings is a student-built project for UNC registration.</div>
-            <div>
-                <a href="https://github.com/jasoncharwin/TarHeelRatings" target="_blank" rel="noreferrer">GitHub</a>
-                &nbsp;|&nbsp;
-                <a href="mailto:jason.charwin360@gmail.com">Email</a>
-            </div>
-        </div>
-    </footer>
+        </main>
+    </div>
 </body>
 </html>
