@@ -1,37 +1,30 @@
-# TarHeelRatings 🐏
+# TarHeelRatings
 
-Tired of manually looking up every professor to see their ratings? TarHeelRatings helps UNC Chapel Hill students streamline their registration process. Instead of frantically switching between tabs to pick the best option, this extension directly embeds RateMyProfessors data right into your ConnectCarolina portal!
+TarHeelRatings puts RateMyProfessors info right inside ConnectCarolina so you do not have to keep opening a million tabs while making your schedule.
 
-*Inspired by [NinerRatings](https://github.com/ausmango/NinerRatings) by Austin Mangold.*
+It is mainly for UNC class search / shopping cart and shows:
+- professor rating info next to names
+- hover details like difficulty, would take again, and rating count
+- support for multiple instructors
+- cached lookups so repeat loads are faster
 
-## Features
-- 🔗 Embedded hyperlink in each professor name for fast look-up
+## Install
+1. Download or clone this repo
+2. Go to `chrome://extensions`
+3. Turn on **Developer Mode**
+4. Click **Load unpacked**
+5. Select the `TarHeelRatings` folder
 
-- 🟢🟡🔴 Visibility dots to show rating color data on initial viewing
+Then open ConnectCarolina and it should show up on supported pages.
 
-- Hover badge showing important stats directly from RMP's website
+## Heads up
+- This only works for UNC Chapel Hill ConnectCarolina pages
+- Some professors will not match perfectly with RateMyProfessors
+- RMP data is not official, so use it like a vibe check, not gospel
+- If RateMyProfessors changes stuff on their end, parts of the extension might break until I update it
 
-- Supports multiple professors per course selection
+## Issues / contact
+If anything is broken or weird, just email me at `jason.charwin360@gmail.com`.
 
-- 3-day Chrome Storage caching for near-instant repeat lookups
-
-## Installation
-1. Download or clone this repository
-2. Open Chrome and go to `chrome://extensions`
-3. Enable **Developer Mode** (top right toggle)
-4. Click **Load unpacked** and select the `TarHeelRatings` folder
-5. Navigate to ConnectCarolina's registration portal and browse classes!
-
-## Version
-Current version: **1.0 INITIAL RELEASE**
-
-## Disclaimer
-NOTE: Rate My Professors is an unofficial website that is utilized by students. All reviews are to be viewed with skepticism.
-
-- **AVAILABILITY** - This extension only works on UNC Chapel Hill's ConnectCarolina self-service registration portal/browse class search, and no other university.
-
-- **NAME MISMATCHES** - Some professor names differ from ConnectCarolina compared to their RMP profiles. This must be fixed manually so some professors may show as 'N/A: no data found,' even if they have data.
-
-- **LOW DATA** - Professors with under 10 ratings may not be representative of actual quality.
-
-- **RMP SITE** - If RMP changes their endpoint, the extension may temporarily be down until fixed.
+## Credit
+Shoutout to the original inspiration: [NinerRatings](https://github.com/ausmango/NinerRatings) by Austin Mangold.
