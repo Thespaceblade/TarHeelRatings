@@ -1,0 +1,1166 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   TarHeelRatings – Shopping Cart Reskin (content area only)
+   Scoped under .thr-reskin. Does NOT modify sidebar or navigation.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 0. Custom Properties ── */
+.thr-reskin {
+    --thr-carolina-blue: #4B9CD3;
+    --thr-carolina-blue-dark: #13294B;
+    --thr-carolina-blue-light: #7DB8E0;
+    /* Claymorphism palette (Tar Heel blue-forward, matte/pastel) */
+    --thr-bg-primary: #eef5fb;
+    --thr-bg-card: #ffffff;
+    --thr-bg-card-2: #fcfcfc;
+    --thr-surface-blue: rgba(75, 156, 211, 0.10);
+    --thr-surface-blue-2: rgba(75, 156, 211, 0.16);
+    --thr-text-primary: #1a1a2e;
+    --thr-text-secondary: #5a6178;
+    --thr-text-muted: #8e95a9;
+    --thr-border: rgba(19, 41, 75, 0.10);
+
+    /* Clay shadows: double (outer + inner) */
+    --thr-shadow-sm: 0 10px 22px rgba(19, 41, 75, 0.10);
+    --thr-shadow-md: 0 14px 30px rgba(19, 41, 75, 0.12);
+    --thr-shadow-lg: 0 22px 44px rgba(19, 41, 75, 0.14);
+    --thr-shadow-inset: inset 0 2px 0 rgba(255, 255, 255, 0.85), inset 0 -6px 10px rgba(19, 41, 75, 0.08);
+    --thr-shadow-inset-soft: inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -3px 6px rgba(19, 41, 75, 0.06);
+
+    --thr-radius: 18px;
+    --thr-radius-sm: 14px;
+    --thr-radius-xs: 10px;
+    --thr-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+/* ── 1. Main Content Background ── */
+.thr-reskin {
+    background: #ffffff !important;
+}
+
+/* ── 2. Page Title ── */
+.thr-reskin h1 {
+    color: var(--thr-carolina-blue-dark) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+}
+
+
+/* ── 3. Action Buttons ── */
+.thr-reskin .MuiButton-root:not([class*="text"]),
+.thr-reskin [class*="MuiButton-root"]:not([class*="text"]),
+.thr-reskin .cx-MuiButton-root:not([class*="text"]) {
+    border-radius: 999px !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    padding: 0 18px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    transition: all var(--thr-transition) !important;
+    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.10) !important;
+    border: 1px solid rgba(19, 41, 75, 0.08) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    background-image: none !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+/* Force inner labels to be horizontal and hide noisy sub-text */
+.thr-reskin .cx-MuiButton-label,
+.thr-reskin .MuiButton-label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    gap: 6px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.thr-reskin .MuiButton-root [class*="body2"],
+.thr-reskin .MuiButton-root [class*="caption"],
+.thr-reskin .MuiButton-root [class*="subtitle"],
+.thr-reskin .MuiButton-root p,
+.thr-reskin .MuiButton-root div:not([class*="label"]),
+.thr-reskin .cx-MuiButton-root [class*="body2"],
+.thr-reskin .cx-MuiButton-root [class*="caption"],
+.thr-reskin .cx-MuiButton-root [class*="subtitle"],
+.thr-reskin .cx-MuiButton-root p,
+.thr-reskin .cx-MuiButton-root div:not([class*="label"]) {
+    display: none !important;
+}
+
+.thr-reskin .MuiButton-root:not([class*="text"]):active,
+.thr-reskin .cx-MuiButton-root:not([class*="text"]):active {
+    box-shadow: inset 0 2px 6px rgba(19, 41, 75, 0.18), 0 4px 10px rgba(19, 41, 75, 0.06) !important;
+}
+
+.thr-reskin .MuiButton-root:not([class*="text"]):focus-visible,
+.thr-reskin .cx-MuiButton-root:not([class*="text"]):focus-visible {
+    outline: 2px solid var(--thr-carolina-blue) !important;
+    outline-offset: 2px !important;
+}
+
+.thr-reskin .MuiButton-root[class*="containedPrimary"],
+.thr-reskin .cx-MuiButton-root[class*="Primary"] {
+    background: var(--thr-carolina-blue-dark) !important;
+    color: white !important;
+}
+
+.thr-reskin .MuiButton-root[class*="containedPrimary"]:hover,
+.thr-reskin .cx-MuiButton-root[class*="Primary"]:hover {
+    background: #0d1e3a !important;
+}
+
+.thr-reskin .MuiButton-root[class*="containedPrimary"]:active,
+.thr-reskin .cx-MuiButton-root[class*="Primary"]:active {
+    background: #0a172e !important;
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(19, 41, 75, 0.06) !important;
+}
+
+.thr-reskin .MuiButton-root[class*="outlinedSecondary"],
+.thr-reskin .cx-MuiButton-root[class*="Secondary"] {
+    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+    color: #b91c1c !important;
+    background: #fffafa !important;
+    box-shadow: var(--thr-shadow-inset-soft), 0 6px 14px rgba(239, 68, 68, 0.08) !important;
+}
+
+.thr-reskin .MuiButton-root[class*="outlinedSecondary"]:hover,
+.thr-reskin .cx-MuiButton-root[class*="Secondary"]:hover {
+    background: #fee2e2 !important;
+}
+
+.thr-reskin .MuiButton-root[class*="outlinedSecondary"]:active,
+.thr-reskin .cx-MuiButton-root[class*="Secondary"]:active {
+    background: #fecaca !important;
+    box-shadow: inset 0 3px 8px rgba(239, 68, 68, 0.12), 0 2px 6px rgba(19, 41, 75, 0.04) !important;
+}
+
+.thr-reskin .MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]),
+.thr-reskin .cx-MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]),
+.thr-reskin .cx-MuiButton-root:not([class*="Primary"]):not([class*="Secondary"]):not([class*="text"]) {
+    border: 1px solid rgba(19, 41, 75, 0.10) !important;
+    color: var(--thr-text-primary) !important;
+    background: #ffffff !important;
+}
+
+.thr-reskin .MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]):hover,
+.thr-reskin .cx-MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]):hover,
+.thr-reskin .cx-MuiButton-root:not([class*="Primary"]):not([class*="Secondary"]):not([class*="text"]):hover {
+    border-color: rgba(75, 156, 211, 0.55) !important;
+    color: var(--thr-carolina-blue) !important;
+    background: #f8fafc !important;
+}
+
+.thr-reskin .MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]):active,
+.thr-reskin .cx-MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]):active,
+.thr-reskin .cx-MuiButton-root:not([class*="Primary"]):not([class*="Secondary"]):not([class*="text"]):active {
+    background: #f1f5f9 !important;
+    box-shadow: inset 0 3px 8px rgba(19, 41, 75, 0.10), 0 2px 6px rgba(19, 41, 75, 0.04) !important;
+}
+
+/* Explicit Disabled State for intuitive UI */
+.thr-reskin .MuiButton-root:disabled,
+.thr-reskin .cx-MuiButton-root:disabled,
+.thr-reskin .Mui-disabled,
+.thr-reskin .cx-Mui-disabled {
+    opacity: 0.55 !important;
+    filter: grayscale(80%) !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    background: #e2e8f0 !important;
+    color: #64748b !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+}
+
+
+/* ── 3b. Icon / Round Buttons ──
+   Buttons that contain only an icon (svg) – keep them circular, no bulging */
+.thr-reskin [class*="IconButton"],
+.thr-reskin [class*="MuiIconButton"] {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: var(--thr-shadow-inset-soft), 0 6px 14px rgba(19, 41, 75, 0.08) !important;
+}
+
+.thr-reskin [class*="IconButton"]:active,
+.thr-reskin [class*="MuiIconButton"]:active {
+    box-shadow: inset 0 2px 6px rgba(19, 41, 75, 0.18), 0 2px 6px rgba(19, 41, 75, 0.04) !important;
+}
+
+.thr-reskin [class*="IconButton"] svg,
+.thr-reskin [class*="MuiIconButton"] svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ── 3c. Button Busy Shimmer ── */
+@keyframes thr-btn-shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.thr-btn-busy {
+    pointer-events: none !important;
+    background-image: linear-gradient(
+        90deg,
+        transparent 25%,
+        rgba(255, 255, 255, 0.45) 50%,
+        transparent 75%
+    ) !important;
+    background-size: 200% 100% !important;
+    animation: thr-btn-shimmer 0.6s ease forwards !important;
+}
+
+
+/* ── 4. Inputs ── */
+/* Standalone search inputs (like the Shopping Cart search bar) */
+.thr-reskin input#search,
+.thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]) {
+    border-radius: 999px !important;
+    border: 1px solid rgba(19, 41, 75, 0.10) !important;
+    background: #ffffff !important;
+    transition: all var(--thr-transition) !important;
+    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.08) !important;
+    padding: 0 14px;
+    height: 38px;
+}
+
+.thr-reskin input#search:focus,
+.thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]):focus {
+    border-color: rgba(75, 156, 211, 0.65) !important;
+    box-shadow: var(--thr-shadow-inset-soft), 0 0 0 4px rgba(75, 156, 211, 0.18), 0 14px 30px rgba(19, 41, 75, 0.10) !important;
+    outline: none !important;
+}
+
+/* Material-UI Complex Inputs (Autocomplete, Select, TextFields) */
+.thr-reskin .cx-MuiInputBase-root,
+.thr-reskin .MuiInputBase-root {
+    border-radius: 999px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(19, 41, 75, 0.10) !important;
+    transition: all var(--thr-transition) !important;
+    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.08) !important;
+    min-height: 38px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+}
+
+/* Hide native MUI borders and underlines to prevent double artifacts */
+.thr-reskin .cx-MuiOutlinedInput-notchedOutline,
+.thr-reskin .MuiOutlinedInput-notchedOutline,
+.thr-reskin .cx-MuiInput-underline:before,
+.thr-reskin .MuiInput-underline:before,
+.thr-reskin .cx-MuiInput-underline:after,
+.thr-reskin .MuiInput-underline:after {
+    display: none !important;
+}
+
+.thr-reskin .cx-MuiInputBase-root:hover,
+.thr-reskin .MuiInputBase-root:hover {
+    border-color: rgba(75, 156, 211, 0.35) !important;
+}
+
+.thr-reskin .cx-MuiInputBase-root.cx-Mui-focused,
+.thr-reskin .MuiInputBase-root.Mui-focused,
+.thr-reskin .cx-MuiInputBase-root.cx-Mui-focused:hover,
+.thr-reskin .MuiInputBase-root.Mui-focused:hover {
+    border-color: rgba(75, 156, 211, 0.65) !important;
+    box-shadow: var(--thr-shadow-inset-soft), 0 0 0 4px rgba(75, 156, 211, 0.18), 0 14px 30px rgba(19, 41, 75, 0.10) !important;
+}
+
+/* Ensure inner inputs stay transparent and don't double-render the styles */
+.thr-reskin .cx-MuiInputBase-input,
+.thr-reskin .MuiInputBase-input {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+.thr-reskin .cx-MuiInputBase-input:focus,
+.thr-reskin .MuiInputBase-input:focus {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    outline: none !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VIEW TOGGLE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.thr-view-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: #f8fafc;
+    border-radius: 999px;
+    padding: 5px;
+    margin-right: 12px;
+    border: 1px solid rgba(19, 41, 75, 0.10);
+    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.10);
+}
+
+.thr-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 28px;
+    border: none !important;
+    background: transparent !important;
+    border-radius: 999px !important;
+    cursor: pointer;
+    color: rgba(19, 41, 75, 0.58) !important;
+    transition: all 0.15s ease !important;
+    padding: 0 !important;
+    min-width: 0 !important;
+}
+
+.thr-toggle-btn:hover {
+    color: var(--thr-carolina-blue) !important;
+    background: rgba(75, 156, 211, 0.12) !important;
+}
+
+.thr-toggle-btn.thr-toggle-active {
+    background: #f1f5f9 !important;
+    color: var(--thr-carolina-blue-dark) !important;
+    box-shadow: var(--thr-shadow-inset-soft), 0 12px 26px rgba(19, 41, 75, 0.12) !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CARD GRID
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.thr-card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    padding: 16px 8px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1400px) {
+    .thr-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1050px) {
+    .thr-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+    .thr-card-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+/* ── Card ──
+   IMPORTANT: No overflow:hidden and no transforms!
+   These break position:fixed on the TarHeelRatings tooltip inside. */
+.thr-card {
+    background: var(--thr-bg-card);
+    border: 1px solid rgba(19, 41, 75, 0.10);
+    border-radius: var(--thr-radius);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--thr-transition), border-color var(--thr-transition), background var(--thr-transition);
+    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-sm);
+    position: relative;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.thr-card:hover {
+    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-lg);
+    border-color: rgba(75, 156, 211, 0.38);
+}
+
+
+/* ── Card Selected State ──
+   Uses outline instead of box-shadow ring so the card doesn't grow. */
+.thr-card-selected {
+    border-color: rgba(75, 156, 211, 0.65) !important;
+    background: #f8fafc;
+    outline: 3px solid rgba(75, 156, 211, 0.22);
+    outline-offset: -1px;
+    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-sm);
+}
+
+.thr-card-selected:hover {
+    outline-color: rgba(75, 156, 211, 0.30);
+    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-lg);
+}
+
+.thr-card-selected .thr-card-header {
+    background: rgba(75, 156, 211, 0.10);
+}
+
+.thr-card-selected .thr-card-footer {
+    background: rgba(75, 156, 211, 0.08);
+}
+
+.thr-card-selected .thr-card-select-label {
+    color: var(--thr-carolina-blue);
+    font-weight: 600;
+}
+
+
+/* ── Card Focus State ── */
+.thr-card:focus-visible {
+    outline: 2px solid var(--thr-carolina-blue);
+    outline-offset: 2px;
+    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-md);
+}
+
+.thr-card:focus:not(:focus-visible) {
+    outline: none;
+}
+
+
+/* ── Card Actions (Kebab & Direct) ── */
+.thr-card-actions-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    justify-content: flex-end;
+    position: relative;
+}
+
+.thr-card-btn-direct {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: auto !important;
+    padding: 3px 10px !important;
+    border-radius: 20px !important;
+    background: var(--thr-carolina-blue) !important;
+    color: white !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.02em !important;
+    border: none !important;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(75, 156, 211, 0.25) !important;
+    transition: all 0.15s ease;
+    white-space: nowrap !important;
+}
+
+.thr-card-btn-direct:hover {
+    background: var(--thr-carolina-blue-dark) !important;
+    transform: translateY(-1px);
+}
+
+.thr-card-btn-direct:active {
+    transform: translateY(0);
+}
+
+.thr-card-kebab-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.thr-card-kebab-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0 !important;
+    border: 1px solid rgba(19, 41, 75, 0.12) !important;
+    border-radius: 6px !important;
+    background: white !important;
+    color: var(--thr-carolina-blue-dark) !important;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: var(--thr-shadow-inset-soft) !important;
+}
+
+.thr-card-kebab-btn:hover {
+    background: rgba(75, 156, 211, 0.15) !important;
+    color: var(--thr-carolina-blue) !important;
+}
+
+.thr-card-kebab-btn:active {
+    background: rgba(75, 156, 211, 0.20) !important;
+}
+
+.thr-card-kebab-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 6px;
+    min-width: 160px;
+    background: #ffffff;
+    border: 1px solid rgba(19, 41, 75, 0.12);
+    border-radius: var(--thr-radius-xs);
+    box-shadow: var(--thr-shadow-inset-soft), var(--thr-shadow-md);
+    padding: 4px 0;
+    z-index: 100;
+}
+
+.thr-card-kebab-menu.thr-kebab-open {
+    display: block;
+}
+
+.thr-card-kebab-menu a,
+.thr-card-kebab-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--thr-text-primary) !important;
+    text-decoration: none;
+    cursor: pointer;
+    background: none !important;
+    border: none !important;
+    padding: 7px 14px !important;
+    border-radius: 0 !important;
+    transition: background 0.12s ease;
+    white-space: nowrap;
+    min-width: 0 !important;
+    box-shadow: none !important;
+    line-height: 1.4;
+}
+
+.thr-card-kebab-menu a:hover,
+.thr-card-kebab-menu button:hover {
+    background: rgba(75, 156, 211, 0.10) !important;
+    color: var(--thr-carolina-blue) !important;
+    text-decoration: none;
+}
+
+
+/* ── Card Messages / Warnings ── */
+.thr-card-messages {
+    padding: 0 14px 4px 14px;
+}
+
+.thr-card-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 3px 0;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--thr-text-secondary);
+}
+
+.thr-card-message--warning {
+    color: #d97706;
+}
+
+.thr-card-message--error {
+    color: #dc2626;
+}
+
+.thr-card-message-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    margin-top: 1px;
+}
+
+.thr-card-message-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+
+/* Fade-in (opacity only, no transform — so fixed tooltips work) */
+@keyframes thr-cardIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.thr-card { animation: thr-cardIn 0.3s ease-out backwards; }
+.thr-card:nth-child(1) { animation-delay: 0.03s; }
+.thr-card:nth-child(2) { animation-delay: 0.06s; }
+.thr-card:nth-child(3) { animation-delay: 0.09s; }
+.thr-card:nth-child(4) { animation-delay: 0.12s; }
+.thr-card:nth-child(5) { animation-delay: 0.15s; }
+.thr-card:nth-child(6) { animation-delay: 0.18s; }
+.thr-card:nth-child(7) { animation-delay: 0.21s; }
+.thr-card:nth-child(8) { animation-delay: 0.24s; }
+.thr-card:nth-child(9) { animation-delay: 0.27s; }
+.thr-card:nth-child(10) { animation-delay: 0.30s; }
+
+
+/* ── Card Header ── */
+.thr-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(19, 41, 75, 0.08);
+    background: rgba(75, 156, 211, 0.04);
+    border-radius: var(--thr-radius) var(--thr-radius) 0 0;
+}
+
+.thr-card-code-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.thr-card-code {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--thr-carolina-blue-dark);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+}
+
+.thr-card-header-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.thr-card-section {
+    font-size: 11px;
+    color: var(--thr-text-muted);
+    font-weight: 500;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.thr-card-capacity {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    box-shadow: var(--thr-shadow-inset-soft);
+}
+
+.thr-cap-open { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
+.thr-cap-filling { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+.thr-cap-full { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+
+
+/* ── Card Body ── */
+.thr-card-body {
+    padding: 8px 14px 6px 14px;
+    flex: 1;
+}
+
+.thr-card-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.thr-card-subject-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    color: var(--thr-carolina-blue);
+    opacity: 0.65;
+}
+
+.thr-card-subject-icon svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+.thr-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--thr-text-primary);
+    line-height: 1.4;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+}
+
+
+/* ── Schedule (inside card body) ── */
+.thr-card-schedule {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--thr-text-secondary);
+}
+
+.thr-card-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--thr-carolina-blue);
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.thr-card-icon svg {
+    display: block;
+}
+
+
+/* ── Instructor ── */
+.thr-card-instructor {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px 8px 14px;
+    font-size: 13px;
+    color: var(--thr-text-secondary);
+    font-weight: 500;
+    min-height: 24px;
+}
+
+/* Make TarHeelRatings badges fit nicely inside cards */
+.thr-card-instructor .thr-professor {
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+}
+
+/* Ensure the tooltip escapes the card (no overflow:hidden on .thr-card!) */
+.thr-card-instructor .thr-tooltip {
+    z-index: 9999999 !important;
+}
+
+
+/* ── Card Footer ── */
+.thr-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 8px 14px;
+    border-top: 1px solid rgba(19, 41, 75, 0.08);
+    background: rgba(75, 156, 211, 0.05);
+    border-radius: 0 0 var(--thr-radius) var(--thr-radius);
+}
+
+.thr-card-units {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--thr-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.thr-card-check input[type="checkbox"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 20px !important;
+    height: 20px !important;
+    border: 2px solid var(--thr-carolina-blue) !important;
+    border-radius: 4px !important;
+    background: #fff !important;
+    cursor: pointer !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    top: auto !important;
+    left: auto !important;
+    transition: all 0.15s ease !important;
+    box-shadow: 0 2px 5px rgba(19, 41, 75, 0.08) !important; /* Making it pop out */
+}
+
+.thr-card-check input[type="checkbox"]:checked {
+    background: var(--thr-carolina-blue) !important;
+    border-color: var(--thr-carolina-blue) !important;
+}
+
+.thr-card-check input[type="checkbox"]:checked::after {
+    content: '' !important;
+    position: absolute !important;
+    left: 4px !important;
+    top: 1px !important;
+    width: 6px !important;
+    height: 11px !important;
+    border: solid #fff !important;
+    border-width: 0 2px 2px 0 !important;
+    transform: rotate(45deg) !important;
+    box-sizing: border-box !important;
+}
+
+.thr-card-check input[type="checkbox"]:hover {
+    border-color: var(--thr-carolina-blue) !important;
+}
+
+.thr-card-select-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--thr-text-muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+.thr-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(19, 41, 75, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    animation: thr-modalFadeIn 0.2s ease-out forwards;
+}
+
+.thr-modal-overlay.thr-modal-closing {
+    animation: thr-modalFadeOut 0.2s ease-in forwards;
+}
+
+@keyframes thr-modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes thr-modalFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.thr-modal {
+    background: var(--thr-bg-card);
+    width: 100%;
+    max-width: 600px;
+    max-height: 85vh;
+    border-radius: var(--thr-radius);
+    box-shadow: var(--thr-shadow-lg), inset 0 2px 0 rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(19, 41, 75, 0.12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.95) translateY(10px);
+    opacity: 0;
+    animation: thr-modalSlideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.05s forwards;
+}
+
+@keyframes thr-modalSlideUp {
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.thr-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid rgba(19, 41, 75, 0.08);
+}
+
+.thr-modal-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--thr-carolina-blue-dark);
+    letter-spacing: -0.01em;
+}
+
+.thr-modal-close {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--thr-text-muted) !important;
+    cursor: pointer;
+    padding: 4px !important;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.thr-modal-close:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+}
+
+.thr-modal-content {
+    padding: 20px;
+    overflow-y: auto;
+    /* Custom scrollbar for modal */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(19, 41, 75, 0.2) transparent;
+}
+
+.thr-modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+.thr-modal-content::-webkit-scrollbar-thumb {
+    background-color: rgba(19, 41, 75, 0.2);
+    border-radius: 10px;
+}
+
+.thr-modal-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--thr-text-muted);
+    font-style: italic;
+    font-size: 13px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* ── Cloned Native Detail Panel ── */
+.thr-native-detail-clone {
+    background: transparent !important;
+    width: 100%;
+}
+.thr-native-detail-clone * {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+.thr-native-detail-clone [class*="MuiGrid-item"] {
+    padding: 8px !important;
+    background: transparent !important;
+}
+.thr-native-detail-clone p,
+.thr-native-detail-clone span,
+.thr-native-detail-clone div,
+.thr-native-detail-clone td,
+.thr-native-detail-clone th,
+.thr-native-detail-clone dd,
+.thr-native-detail-clone dt {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    color: var(--thr-text-primary) !important;
+}
+/* Style the Headers (Information, Details, etc.) */
+.thr-native-detail-clone [class*="bold"],
+.thr-native-detail-clone dt,
+.thr-native-detail-clone th[scope="row"] {
+    font-weight: 700 !important;
+    color: var(--thr-carolina-blue-dark) !important;
+}
+/* Style the internal tables (like Availability Seats) */
+.thr-native-detail-clone table {
+    width: 100% !important;
+    margin-top: 8px;
+    border-collapse: collapse;
+}
+.thr-native-detail-clone td,
+.thr-native-detail-clone th {
+    padding: 6px 4px !important;
+    border-bottom: 1px solid rgba(19, 41, 75, 0.08) !important;
+}
+
+
+/* Modal Grid Layout (reusing detail grid structure) */
+.thr-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 500px) {
+    .thr-detail-grid { grid-template-columns: 1fr; gap: 16px; }
+}
+
+.thr-detail-col {
+    min-width: 0;
+}
+
+.thr-detail-heading {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--thr-carolina-blue-dark);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid rgba(75, 156, 211, 0.15);
+}
+
+.thr-detail-row {
+    display: flex;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 13px;
+    line-height: 1.4;
+    border-bottom: 1px solid rgba(19, 41, 75, 0.04);
+}
+
+.thr-detail-row:last-child {
+    border-bottom: none;
+}
+
+.thr-detail-row--long {
+    flex-direction: column;
+    gap: 4px;
+}
+
+.thr-detail-label {
+    flex-shrink: 0;
+    min-width: 120px;
+    font-weight: 700;
+    color: var(--thr-header-bg);
+}
+
+.thr-detail-row--long .thr-detail-label {
+    min-width: 0;
+}
+
+.thr-detail-value {
+    color: var(--thr-text-main);
+    word-break: break-word;
+    white-space: pre-line;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIST VIEW (DATA GRID) – CLAYMORPHISM
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Grid container */
+.thr-reskin [aria-label="Enrollment_Classes"] {
+    border-radius: var(--thr-radius) !important;
+    background: #ffffff !important;
+    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-md) !important;
+    border: 1px solid rgba(19, 41, 75, 0.10) !important;
+    overflow: visible !important;
+}
+
+/* Header row */
+.thr-reskin [aria-label="Enrollment_Classes"] [role="row"]:first-child {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.thr-reskin [aria-label="Enrollment_Classes"] [role="columnheader"] {
+    color: rgba(19, 41, 75, 0.55) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em;
+    line-height: 1.2 !important;
+    text-transform: uppercase;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+}
+
+/* Data rows as pill-like clay strips */
+.thr-reskin [aria-label="Enrollment_Classes"] [role="row"]:not(:first-child) {
+    background: #f1f5f9 !important;
+    border: 1px solid rgba(19, 41, 75, 0.08) !important;
+    border-radius: 14px !important;
+    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.08) !important;
+    margin: 8px 10px !important;
+    overflow: visible !important;
+}
+
+.thr-reskin [aria-label="Enrollment_Classes"] [role="row"]:not(:first-child):hover {
+    box-shadow: var(--thr-shadow-inset-soft), 0 18px 36px rgba(19, 41, 75, 0.12) !important;
+    border-color: rgba(75, 156, 211, 0.30) !important;
+}
+
+/* Cell padding for better breathing room */
+.thr-reskin [aria-label="Enrollment_Classes"] [role="gridcell"],
+.thr-reskin [aria-label="Enrollment_Classes"] [role="rowheader"] {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIST VIEW COLUMN SPACING
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Allow flexible growth to absorb free space left by hidden units column */
+.thr-list-col-desc {
+    flex-grow: 1.5 !important;
+    max-width: none !important;
+}
+
+.thr-list-col-instr {
+    flex-grow: 1.2 !important;
+    max-width: none !important;
+    padding-right: 16px !important;
+}
+
+.thr-list-col-units {
+    display: none !important;
+}
+
+
+/* ── Scrollbar (main only) ── */
+.thr-reskin ::-webkit-scrollbar { width: 6px; height: 6px; }
+.thr-reskin ::-webkit-scrollbar-track { background: transparent; }
+.thr-reskin ::-webkit-scrollbar-thumb { background: rgba(75, 156, 211, 0.2); border-radius: 3px; }
+
+/* ── Toolbar Layout ── */
+.thr-reskin [class*="Toolbar"],
+.thr-reskin [class*="toolbar"] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+}
+.thr-reskin [class*="Toolbar"] > div,
+.thr-reskin [class*="toolbar"] > div {
+    margin: 0 !important;
+}
+
+/* Prevent text bleeding in List view columns (Instructor, Units) */
+.thr-reskin [aria-label="Enrollment_Classes"] .cx-MuiGrid-wrap-xs-nowrap,
+.thr-reskin [aria-label="Enrollment_Classes"] [class*="MuiGrid-item"] {
+    white-space: normal !important;
+    word-break: normal !important;
+    flex-wrap: wrap !important;
+    min-width: 0 !important;
+}
+
+/* Shrink font sizes in List View to prevent overlap */
+.thr-reskin [aria-label="Enrollment_Classes"] [class*="MuiGrid-item"],
+.thr-reskin [aria-label="Enrollment_Classes"] [class*="MuiGrid-item"] p,
+.thr-reskin [aria-label="Enrollment_Classes"] [class*="MuiGrid-item"] span,
+.thr-reskin [aria-label="Enrollment_Classes"] [class*="MuiGrid-item"] a {
+    font-size: 11.5px !important;
+    line-height: 1.3 !important;
+}
+
+/* Thicken the list view Code header so it still pops at smaller size */
+.thr-reskin [aria-label="Enrollment_Classes"] a[class*="cx-MuiLink-root"] {
+    font-size: 13px !important;
+}
+

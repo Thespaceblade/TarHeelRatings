@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+
+# Local scratch/reference pages
+examples of pages/
+
+# Optional packaging artifacts
+dist/
+*.zip
