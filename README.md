@@ -26,7 +26,7 @@ Then open ConnectCarolina and it should show up on supported pages.
 ## Heads up
 - This only works for UNC Chapel Hill ConnectCarolina pages
 - Some professors will not match perfectly with RateMyProfessors
-- RMP data is not official, so use it like a vibe check, not gospel
+- RateMyProfessors data is not official, so use it like a vibe check, not gospel
 - If RateMyProfessors changes stuff on their end, parts of the extension might break until I update it
 
 ## Issues / contact
