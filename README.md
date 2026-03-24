@@ -2,6 +2,9 @@
 
 TarHeelRatings puts RateMyProfessors info right inside ConnectCarolina so you do not have to keep opening a million tabs while making your schedule.
 
+Chrome Web Store:
+[https://chromewebstore.google.com/detail/tarheelratings/cgjnhcegedkmibkaonhkomledeobanbe?authuser=0&hl=en](https://chromewebstore.google.com/detail/tarheelratings/cgjnhcegedkmibkaonhkomledeobanbe?authuser=0&hl=en)
+
 It is mainly for UNC class search / shopping cart and shows:
 - professor rating info next to names
 - hover details like difficulty, would take again, and rating count
@@ -9,6 +12,9 @@ It is mainly for UNC class search / shopping cart and shows:
 - cached lookups so repeat loads are faster
 
 ## Install
+If you just want to use it, install it from the Chrome Web Store link above.
+
+If you want to load it manually:
 1. Download or clone this repo
 2. Go to `chrome://extensions`
 3. Turn on **Developer Mode**
