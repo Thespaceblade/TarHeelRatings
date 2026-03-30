@@ -147,3 +147,685 @@
     font-size: 13px;
     color: #aaa;
 }
+
+/* ── Dashboard Welcome ── */
+
+#thr-dashboard-welcome {
+    --thr-dashboard-navy: #13294B;
+    --thr-dashboard-blue: #4B9CD3;
+    --thr-dashboard-surface: #ffffff;
+    --thr-dashboard-surface-soft: #f6f8fb;
+    --thr-dashboard-border: rgba(19, 41, 75, 0.10);
+    --thr-dashboard-text: #13294B;
+    --thr-dashboard-text-soft: #5a6178;
+    position: fixed;
+    inset: 0;
+    z-index: 2147483644;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#thr-dashboard-tour-guide {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483645;
+    pointer-events: none;
+}
+
+#thr-class-search-tour-guide {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483645;
+    pointer-events: none;
+}
+
+#thr-dashboard-tour-guide .thr-tracker-guide__spotlight {
+    border-radius: 16px;
+    box-shadow: 0 0 0 9999px rgba(19, 41, 75, 0.34);
+    border: 2px solid #4B9CD3;
+    background: rgba(255, 255, 255, 0.04);
+    transition: top 220ms ease, left 220ms ease, width 220ms ease, height 220ms ease, opacity 180ms ease;
+}
+
+#thr-dashboard-tour-guide .thr-tracker-guide__pulse {
+    border-radius: 18px;
+    border: 2px solid rgba(75, 156, 211, 0.42);
+    transition: top 220ms ease, left 220ms ease, width 220ms ease, height 220ms ease, opacity 180ms ease;
+}
+
+#thr-dashboard-tour-guide .thr-tracker-guide__arrow {
+    color: #ffffff;
+    line-height: 1;
+    text-shadow:
+        0 2px 6px rgba(19, 41, 75, 0.42),
+        0 0 1px rgba(19, 41, 75, 0.56);
+    transition: top 220ms ease, left 220ms ease, opacity 180ms ease;
+}
+
+#thr-class-search-tour-guide .thr-tracker-guide__spotlight {
+    border-radius: 16px;
+    box-shadow: 0 0 0 9999px rgba(19, 41, 75, 0.34);
+    border: 2px solid #4B9CD3;
+    background: rgba(255, 255, 255, 0.04);
+    transition: top 220ms ease, left 220ms ease, width 220ms ease, height 220ms ease, opacity 180ms ease;
+}
+
+#thr-class-search-tour-guide .thr-tracker-guide__pulse {
+    border-radius: 18px;
+    border: 2px solid rgba(75, 156, 211, 0.42);
+    transition: top 220ms ease, left 220ms ease, width 220ms ease, height 220ms ease, opacity 180ms ease;
+}
+
+#thr-class-search-tour-guide .thr-tracker-guide__arrow {
+    color: #ffffff;
+    line-height: 1;
+    text-shadow:
+        0 2px 6px rgba(19, 41, 75, 0.42),
+        0 0 1px rgba(19, 41, 75, 0.56);
+    transition: top 220ms ease, left 220ms ease, opacity 180ms ease;
+}
+
+#thr-dashboard-launcher,
+.thr-dashboard-header-bar,
+.thr-dashboard-header-actions {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.thr-dashboard-header-bar {
+    position: relative;
+    overflow: visible;
+}
+
+.thr-dashboard-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#thr-dashboard-launcher {
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid rgba(19, 41, 75, 0.10);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #13294B;
+    box-shadow: 0 6px 16px rgba(19, 41, 75, 0.10);
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+#thr-dashboard-launcher.thr-dashboard-launcher--floating {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+}
+
+#thr-dashboard-launcher.thr-dashboard-launcher--floating:hover {
+    background: #ffffff;
+    border-color: rgba(75, 156, 211, 0.32);
+    box-shadow: 0 10px 22px rgba(19, 41, 75, 0.14);
+    transform: translateY(calc(-50% - 1px));
+}
+
+#thr-dashboard-launcher.thr-dashboard-launcher--inline {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border-color: rgba(117, 127, 169, 0.24);
+    background: #ffffff;
+    box-shadow: none;
+    color: rgb(117, 127, 169);
+    flex: 0 0 auto;
+}
+
+#thr-dashboard-launcher.thr-dashboard-launcher--inline:hover {
+    background: #f8fbff;
+    border-color: rgba(75, 156, 211, 0.34);
+    box-shadow: none;
+    transform: translateY(-1px);
+}
+
+.thr-dashboard-launcher__icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+
+.thr-dashboard-launcher__label {
+    display: none;
+}
+
+.thr-dashboard-welcome__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(19, 41, 75, 0.42);
+    backdrop-filter: blur(3px);
+}
+
+.thr-dashboard-welcome__dialog {
+    position: relative;
+    width: min(940px, calc(100vw - 32px));
+    max-height: calc(100vh - 36px);
+    margin: 18px auto;
+    overflow: hidden;
+    border-radius: 18px;
+    border: 1px solid var(--thr-dashboard-border);
+    background: var(--thr-dashboard-surface);
+    box-shadow: 0 20px 48px rgba(10, 24, 46, 0.22);
+    color: var(--thr-dashboard-text);
+}
+
+.thr-dashboard-welcome__dialog::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 8px;
+    background: #4B9CD3;
+}
+
+.thr-dashboard-welcome__close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(19, 41, 75, 0.10);
+    border-radius: 999px;
+    background: #f3f6fa;
+    color: var(--thr-dashboard-navy);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 1;
+    transition: background 160ms ease, border-color 160ms ease;
+}
+
+.thr-dashboard-welcome__close:hover {
+    background: #ebf1f7;
+    border-color: rgba(75, 156, 211, 0.32);
+}
+
+.thr-dashboard-welcome__hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 30px 28px 18px;
+}
+
+.thr-dashboard-welcome__brand {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    min-width: 0;
+}
+
+.thr-dashboard-welcome__logo {
+    flex: 0 0 auto;
+    width: 132px;
+    height: 132px;
+    object-fit: contain;
+}
+
+.thr-dashboard-welcome__copy {
+    min-width: 0;
+}
+
+.thr-dashboard-welcome__title-row {
+    display: inline-flex;
+    align-items: flex-start;
+}
+
+.thr-dashboard-welcome__title {
+    margin: 0;
+    font-size: clamp(42px, 5.4vw, 66px);
+    line-height: 0.98;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--thr-dashboard-navy);
+}
+
+.thr-dashboard-welcome__intro {
+    margin: 14px 0 0;
+    max-width: 640px;
+    font-size: 15px;
+    line-height: 1.52;
+    color: var(--thr-dashboard-text-soft);
+}
+
+.thr-dashboard-welcome__version {
+    flex: 0 0 auto;
+    margin-right: 42px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: #13294B;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    box-shadow: none;
+}
+
+.thr-dashboard-welcome__body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    padding: 0 28px 18px;
+}
+
+.thr-dashboard-welcome__panel {
+    position: relative;
+    border-radius: 14px;
+    border: 1px solid rgba(19, 41, 75, 0.08);
+    background: #ffffff;
+    box-shadow: none;
+    padding: 18px 18px 16px;
+}
+
+.thr-dashboard-welcome__panel-title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3c89c1;
+}
+
+.thr-dashboard-welcome__list {
+    margin: 12px 0 0;
+    padding-left: 18px;
+    color: var(--thr-dashboard-text);
+}
+
+.thr-dashboard-welcome__list li {
+    margin: 0 0 8px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.thr-dashboard-welcome__footer {
+    margin: 0 28px 28px;
+    padding: 8px 0 0;
+    border-radius: 14px;
+    border: 0;
+    background: transparent;
+    color: var(--thr-dashboard-text);
+    box-shadow: none;
+}
+
+.thr-dashboard-welcome__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-start;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.thr-dashboard-welcome__button {
+    border: 1px solid rgba(19, 41, 75, 0.10);
+    border-radius: 999px;
+    padding: 11px 18px;
+    background: #13294B;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.thr-dashboard-welcome__button:hover {
+    background: #0f2240;
+    border-color: #0f2240;
+}
+
+.thr-dashboard-welcome__button--tutorial {
+    box-shadow:
+        0 0 0 1px rgba(75, 156, 211, 0.16),
+        0 0 0 10px rgba(75, 156, 211, 0.10),
+        0 14px 30px rgba(75, 156, 211, 0.28);
+    animation: thr-dashboard-tutorial-glow 2s ease-in-out infinite;
+}
+
+.thr-dashboard-welcome__button--tutorial:hover {
+    transform: translateY(-1px);
+    box-shadow:
+        0 0 0 1px rgba(75, 156, 211, 0.22),
+        0 0 0 12px rgba(75, 156, 211, 0.12),
+        0 18px 34px rgba(75, 156, 211, 0.34);
+}
+
+.thr-dashboard-welcome__button--secondary {
+    background: #ffffff;
+    color: #13294B;
+}
+
+.thr-dashboard-welcome__button--secondary:hover {
+    background: #f3f6fa;
+    border-color: rgba(75, 156, 211, 0.32);
+}
+
+@media (max-width: 900px) {
+    .thr-dashboard-welcome__dialog {
+        width: min(920px, calc(100vw - 20px));
+        margin: 24px auto;
+    }
+
+    .thr-dashboard-welcome__hero {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 28px 22px 18px;
+    }
+
+    .thr-dashboard-welcome__version {
+        margin-right: 0;
+        align-self: flex-start;
+    }
+
+    .thr-dashboard-welcome__body {
+        grid-template-columns: 1fr;
+        padding: 0 22px 20px;
+    }
+
+    .thr-dashboard-welcome__footer {
+        margin: 0 22px 22px;
+    }
+}
+
+@media (max-width: 640px) {
+    #thr-dashboard-launcher {
+        right: 10px;
+        width: 38px;
+        height: 38px;
+    }
+
+    .thr-dashboard-welcome__dialog {
+        width: calc(100vw - 16px);
+        max-height: calc(100vh - 16px);
+        margin: 8px auto;
+        border-radius: 16px;
+    }
+
+    .thr-dashboard-welcome__brand {
+        align-items: center;
+    }
+
+    .thr-dashboard-welcome__logo {
+        width: 96px;
+        height: 96px;
+    }
+
+    .thr-dashboard-welcome__title {
+        font-size: 30px;
+    }
+
+    .thr-dashboard-welcome__version {
+        margin-right: 34px;
+    }
+
+    .thr-dashboard-welcome__intro,
+    .thr-dashboard-welcome__list li {
+        font-size: 13px;
+    }
+
+    .thr-dashboard-welcome__actions {
+        width: 100%;
+    }
+}
+
+@keyframes thr-dashboard-tutorial-glow {
+    0%, 100% {
+        box-shadow:
+            0 0 0 1px rgba(75, 156, 211, 0.16),
+            0 0 0 10px rgba(75, 156, 211, 0.10),
+            0 14px 30px rgba(75, 156, 211, 0.28);
+    }
+    50% {
+        box-shadow:
+            0 0 0 1px rgba(75, 156, 211, 0.24),
+            0 0 0 14px rgba(75, 156, 211, 0.14),
+            0 18px 36px rgba(75, 156, 211, 0.34);
+    }
+}
+
+/* ── Tar Heel Tracker guided sync ── */
+
+#thr-tracker-guide,
+#thr-class-search-tour-guide {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483646;
+    pointer-events: none;
+}
+
+.thr-tracker-guide__spotlight,
+.thr-tracker-guide__pulse,
+.thr-tracker-guide__arrow {
+    position: fixed;
+    display: none;
+    pointer-events: none;
+}
+
+.thr-tracker-guide__spotlight {
+    border-radius: 16px;
+    box-shadow: 0 0 0 9999px rgba(19, 41, 75, 0.48);
+    border: 2px solid #4B9CD3;
+    background: rgba(255, 255, 255, 0.03);
+    transition: top 220ms ease, left 220ms ease, width 220ms ease, height 220ms ease;
+}
+
+.thr-tracker-guide__pulse {
+    border-radius: 18px;
+    border: 2px solid rgba(75, 156, 211, 0.42);
+    animation: thr-tracker-pulse 1.8s ease-out infinite;
+    transition: top 220ms ease, left 220ms ease, width 220ms ease, height 220ms ease;
+}
+
+.thr-tracker-guide__arrow {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+    color: #ffffff;
+    text-shadow:
+        0 2px 6px rgba(19, 41, 75, 0.42),
+        0 0 1px rgba(19, 41, 75, 0.56);
+    animation: thr-tracker-bounce 1.2s ease-in-out infinite;
+    transform-origin: center;
+}
+
+#thr-tracker-sync-panel,
+#thr-dashboard-tour-panel,
+#thr-class-search-tour-panel {
+    --thr-guide-accent: #13294B;
+    --thr-guide-accent-soft: rgba(19, 41, 75, 0.08);
+    --thr-guide-border: rgba(19, 41, 75, 0.10);
+    --thr-guide-surface: #ffffff;
+    --thr-guide-title: #0f172a;
+    --thr-guide-detail: #1e293b;
+    --thr-guide-hint: #475569;
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: min(380px, calc(100vw - 32px));
+    padding: 18px 18px 16px;
+    border-radius: 18px;
+    background: var(--thr-guide-surface);
+    color: var(--thr-guide-title);
+    box-shadow: 0 18px 36px rgba(19, 41, 75, 0.12);
+    border: 1px solid var(--thr-guide-border);
+    z-index: 2147483647;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    animation: thr-guide-panel-enter 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#thr-tracker-sync-panel::before,
+#thr-dashboard-tour-panel::before,
+#thr-class-search-tour-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 8px;
+    background: var(--thr-guide-accent);
+}
+
+.thr-dashboard-tour-panel__actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.thr-dashboard-tour-panel__ghost {
+    border: 1px solid rgba(19, 41, 75, 0.10);
+    border-radius: 999px;
+    padding: 10px 14px;
+    background: #ffffff;
+    color: #13294B;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.thr-dashboard-tour-panel__ghost:hover {
+    background: #f3f6fa;
+    border-color: rgba(75, 156, 211, 0.32);
+    color: #0f2240;
+}
+
+@keyframes thr-guide-panel-enter {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.thr-tracker-sync-panel--hidden {
+    display: none;
+}
+
+.thr-tracker-sync-panel--success {
+    --thr-guide-accent: #15803d;
+    --thr-guide-accent-soft: rgba(21, 128, 61, 0.10);
+    --thr-guide-border: rgba(21, 128, 61, 0.16);
+}
+
+.thr-tracker-sync-panel--error {
+    --thr-guide-accent: #b91c1c;
+    --thr-guide-accent-soft: rgba(185, 28, 28, 0.10);
+    --thr-guide-border: rgba(185, 28, 28, 0.16);
+}
+
+.thr-tracker-sync-panel__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: var(--thr-guide-accent-soft);
+    border: 1px solid var(--thr-guide-accent-soft);
+    color: var(--thr-guide-accent);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.thr-tracker-sync-panel__eyebrow::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--thr-guide-accent);
+    box-shadow: 0 0 0 6px var(--thr-guide-accent-soft);
+}
+
+.thr-tracker-sync-panel__title {
+    margin-top: 14px;
+    font-size: 21px;
+    line-height: 1.15;
+    font-weight: 900;
+    color: var(--thr-guide-title);
+}
+
+.thr-tracker-sync-panel__detail {
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--thr-guide-detail);
+    font-weight: 500;
+}
+
+.thr-tracker-sync-panel__hint {
+    margin-top: 12px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--thr-guide-hint);
+}
+
+.thr-tracker-sync-panel__button {
+    width: 100%;
+    margin-top: 16px;
+    border: 1px solid rgba(19, 41, 75, 0.10);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: var(--thr-guide-accent);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+    box-shadow: none;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.thr-tracker-sync-panel__button:hover:not(:disabled) {
+    background: #0f2240;
+    border-color: #0f2240;
+}
+
+.thr-tracker-sync-panel__button:disabled {
+    opacity: 0.72;
+    cursor: progress;
+}
+
+.thr-tracker-sync-panel__button--hidden {
+    display: none;
+}
+
+@keyframes thr-tracker-pulse {
+    0% {
+        opacity: 0.95;
+        transform: scale(1);
+    }
+    70% {
+        opacity: 0;
+        transform: scale(1.08);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.1);
+    }
+}
+
+@keyframes thr-tracker-bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(8px);
+    }
+}

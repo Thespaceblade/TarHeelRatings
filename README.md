@@ -23,6 +23,20 @@ If you want to load it manually:
 
 Then open ConnectCarolina and it should show up on supported pages.
 
+## Catalog Data
+The tracker sidebar can also use a generated UNC catalog lookup for major and minor requirement groups.
+
+To rebuild that dataset from the live UNC catalog:
+
+```bash
+node scripts/build-program-catalog.mjs
+```
+
+That writes:
+- `extension/data/unc-program-catalog.json`
+- `extension/data/unc-program-index.json`
+- `extension/data/unc-requirement-lookup.json`
+
 ## Heads up
 - This only works for UNC Chapel Hill ConnectCarolina pages
 - Some professors will not match perfectly with RateMyProfessors

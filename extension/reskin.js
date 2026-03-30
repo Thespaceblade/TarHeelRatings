@@ -5,6 +5,10 @@
     'use strict';
 
     const VIEW_STORAGE_KEY = 'thrShoppingCartView';
+    const FEATURE_TUTORIAL_STORAGE_KEY = 'thr_feature_tutorial_step';
+    const CLASS_SEARCH_TUTORIAL_TOGGLE_STEP = 'class_search_tracker_toggle';
+    const CLASS_SEARCH_TUTORIAL_ACTION_STEP = 'class_search_requirement_action';
+    const CLASS_SEARCH_TUTORIAL_COMPLETE_STEP = 'class_search_tutorial_complete';
 
     function loadViewPreference() {
         try { return localStorage.getItem(VIEW_STORAGE_KEY) || 'list'; }
@@ -17,6 +21,11 @@
     }
 
     let currentView = loadViewPreference();
+    let featureTutorialStep = '';
+    let featureTutorialStepLoaded = false;
+    let classSearchTutorialRefreshFrame = 0;
+    let classSearchTutorialCompletedAt = 0;
+    let classSearchTutorialCompletionTimer = 0;
 
     /* ── SVG icon strings ── */
     const S = 'stroke-linecap="round" stroke-linejoin="round"';
@@ -93,13 +102,39 @@
         );
     }
 
+    function isDashboardShellFrame() {
+        return window === window.top && /H_DASHBOARD\.FieldFormula\.IScript_Main/i.test(location.href);
+    }
+
+    function hasClassSearchFormMarkers() {
+        const markerCount = [
+            findClassSearchFieldInputByToken('TERM'),
+            findClassSearchFieldInputByToken('ACAD_CAREER'),
+            findClassSearchFieldInputByToken('SUBJECT'),
+            findClassSearchFieldInputByToken('CATALOG_NBR'),
+            findClassSearchFieldInputByToken('SSR_CLSRCH_WRK_COURSE_ATTR'),
+            findClassSearchFieldInputByToken('SSR_CLSRCH_WRK_COURSE_ATTR_VALUE'),
+            findClassSearchSearchButton(),
+        ].filter(Boolean).length;
+
+        if (markerCount >= 2) return true;
+
+        const labelHits = ['Term', 'Acad Career', 'Subject', 'Catalog Nbr', 'Course Attribute']
+            .filter((label) => !!findInputByLabel(label))
+            .length;
+
+        return labelHits >= 2;
+    }
+
     function isClassSearchPage() {
-        return !!(
-            document.title.includes('Class Search') || 
-            document.querySelector('input#CATALOG_NBR') || 
-            document.querySelector('input#INSTRUCTOR_NAME') ||
-            document.querySelector('[aria-label="Class Search"]')
-        );
+        if (hasClassSearchFormMarkers()) return true;
+        if (isDashboardShellFrame()) return false;
+
+        if (document.title.includes('Class Search')) return true;
+        const heading = document.querySelector('h1, h2, h3, .cx-MuiTypography-h1, .cx-MuiTypography-h2');
+        if (heading && (heading.innerText || heading.textContent || '').includes('Class Search')) return true;
+
+        return !!findClassSearchFieldInputByToken('INSTRUCTOR_NAME');
     }
 
     /**
@@ -371,8 +406,8 @@
                     multiWrap.appendChild(wrapper);
 
                     try {
-                        chrome.runtime.sendMessage({ professorName: parsed.search }, (resp) => {
-                            if (chrome.runtime.lastError) return;
+                        safeRuntimeSendMessage({ professorName: parsed.search }, (resp, error) => {
+                            if (error) return;
                             if (resp && resp.success) {
                                 injectOverview(wrapper, resp.data, parsed.display);
                             } else {
@@ -889,6 +924,2225 @@
         });
     }
 
+    /* ── Tracker Auto-Search: MUI Autocomplete Interaction ── */
+
+    // Maps tracker requirement titles → ConnectCarolina IDEA dropdown option text
+    const GEN_ED_VALUE_MAP = {
+        'Aesthetic and Interpretive Analysis': ['Aesthetic & Interpretive Analy', 'Aesthetic and Interpretive Analysis'],
+        'Creative Expression, Practice, and Production': ['Creative Expression, Practice', 'Creative Expression, Practice and Production'],
+        'Engagement with the Human Past': ['Engagement with the Human Past'],
+        'Ethical and Civic Values': ['Ethical and Civic Values'],
+        'Global Understanding and Engagement': ['Global Understanding & Engmt', 'Global Understanding and Engagement'],
+        'Natural Scientific Investigation': ['Nat Sci Investigation', 'Natural Scientific Investigation'],
+        'Power, Difference, and Inequality': ['Power, Difference, Inequality', 'Power, Difference, and Inequality'],
+        'Quantitative Reasoning': ['Quantitative Reasoning'],
+        'Ways of Knowing': ['Ways of Knowing'],
+        'Empirical Investigation Lab': ['Empirical Investigation Lab'],
+        'Empirical Investigative Lab': ['Empirical Investigation Lab'],
+        'Research and Discovery': ['Research and Discovery'],
+        'High Impact Option: Study Abroad': ['High-Impact: Study Abroad'],
+        'High Impact Option: Internship': ['High-Impact: Internship'],
+        'High Impact Option: Public Service': ['High-Impact: Service Learning'],
+        'High Impact Option: Performance Creation or Production': ['High-Impact: Performance'],
+        'High Impact Option: Undergraduate Learning Assistant': ['High-Impact: UG Learn Ast'],
+        'High Impact Option: High Impact Experience-General': ['High-Impact: General'],
+        'High Impact Option: Collaborative Online International Learning': ['High-Impact: COIL'],
+        'High Impact Option: Research and Discovery (2nd course)': ['Research and Discovery'],
+        'Communication Beyond Carolina': ['Communication Beyond Carolina'],
+        'Lifetime Fitness': ['Lifetime Fitness'],
+        'Global Language Level 3': ['Global Language', 'Global Language Level 3', 'Global Language through level 3'],
+        'Global Language through level 3': ['Global Language', 'Global Language through level 3', 'Global Language Level 3'],
+        'Campus Life Experience': ['Campus Life Experience'],
+        'Data Literacy': ['Data Literacy'],
+        'Interdisciplinary': ['Interdisciplinary'],
+        'Writing at the Research University': ['Writing at the Research Univ', 'Writing at the Research University'],
+        'Writing at the Research Univ': ['Writing at the Research Univ', 'Writing at the Research University'],
+        'Foundations of American Democracy': ['Foundations of Amer. Democracy', 'Foundations of American Democracy'],
+        'Foundations of Amer. Democracy': ['Foundations of Amer. Democracy', 'Foundations of American Democracy'],
+        'First-Year Seminar': ['First Year Seminar', 'First-Year Seminar'],
+        'First Year Seminar': ['First Year Seminar', 'First-Year Seminar'],
+        'First-Year Launch': ['First-Year Launch - Section', 'First-Year Launch'],
+        'First-Year Launch - Section': ['First-Year Launch - Section', 'First-Year Launch'],
+        'First Year Thriving': ['First Year Thriving', 'College Thriving'],
+        'College Thriving': ['First Year Thriving', 'College Thriving'],
+        'Ideas, Information, and Inquiry': ['Ideas, Information and Inquiry', 'Ideas, Information, and Inquiry'],
+        'Ideas, Information and Inquiry': ['Ideas, Information and Inquiry', 'Ideas, Information, and Inquiry'],
+        'Triple-I': ['Ideas, Information and Inquiry', 'Ideas, Information, and Inquiry']
+    };
+
+    const SPECIFIC_COURSES_MAP = {
+        'Optimization': ['MATH 522', 'MATH 524', 'MATH 560', 'STOR 415', 'STOR 612'],
+        'Machine Learning and AI': ['COMP 422', 'COMP 562', 'STOR 531', 'STOR 565']
+    };
+
+    const REQUIREMENT_OPTION_MAP = {
+        'High Impact Experience': {
+            label: 'Choose a High-Impact Path',
+            sourceNote: 'UNC lists Study Abroad, Internship, Public Service, Performance, Undergraduate Learning Assistant, General, COIL, or a second Research and Discovery course.',
+            options: [
+                { label: 'Study Abroad', searchTitle: 'High Impact Option: Study Abroad' },
+                { label: 'Internship', searchTitle: 'High Impact Option: Internship' },
+                { label: 'Public Service', searchTitle: 'High Impact Option: Public Service' },
+                { label: 'Performance / Production', searchTitle: 'High Impact Option: Performance Creation or Production' },
+                { label: 'UG Learning Assistant', searchTitle: 'High Impact Option: Undergraduate Learning Assistant' },
+                { label: 'General', searchTitle: 'High Impact Option: High Impact Experience-General' },
+                { label: 'COIL', searchTitle: 'High Impact Option: Collaborative Online International Learning' },
+                { label: '2nd Research and Discovery', searchTitle: 'High Impact Option: Research and Discovery (2nd course)' },
+            ],
+        },
+    };
+
+    const REQUIREMENT_LOOKUP_DATA_URL = chrome?.runtime?.getURL
+        ? chrome.runtime.getURL('extension/data/unc-requirement-lookup.json')
+        : '';
+    const PROGRAM_INDEX_DATA_URL = chrome?.runtime?.getURL
+        ? chrome.runtime.getURL('extension/data/unc-program-index.json')
+        : '';
+    const TRACKER_GENERAL_SECTION_KEY = '__thr_general_requirements__';
+
+    const CLASS_SEARCH_PREF_KEYS = {
+        term: 'thr_last_class_search_term',
+        acadCareer: 'thr_last_class_search_acad_career',
+    };
+
+    const AUTOCOMPLETE_RETRY_CONFIG = {
+        attempts: 3,
+        betweenAttemptsMs: 300,
+        confirmTimeoutMs: 1800,
+        inputTimeoutMs: 7000,
+        interactiveTimeoutMs: 3000,
+        optionTimeoutMs: 3000,
+        settleMs: 250,
+    };
+
+    const REQUIREMENT_LOOKUP_STOP_WORDS = new Set([
+        'a', 'an', 'and', 'at', 'by', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'with',
+        'course', 'courses', 'requirement', 'requirements', 'major', 'minor', 'check'
+    ]);
+
+    let requirementLookupPromise = null;
+    let requirementLookupEntries = null;
+    let programIndexPromise = null;
+    let programIndexData = null;
+
+    function safeLocalStorageGet(keys, callback) {
+        if (!chrome?.storage?.local) {
+            callback?.({});
+            return;
+        }
+
+        try {
+            chrome.storage.local.get(keys, (result) => {
+                callback?.(result || {});
+            });
+        } catch (_) {
+            callback?.({});
+        }
+    }
+
+    function safeLocalStorageSet(values) {
+        if (!chrome?.storage?.local) return false;
+
+        try {
+            chrome.storage.local.set(values);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function safeLocalStorageRemove(keys) {
+        if (!chrome?.storage?.local) return false;
+
+        try {
+            chrome.storage.local.remove(keys);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function addSafeStorageChangeListener(listener) {
+        if (!chrome?.storage?.onChanged?.addListener) return false;
+
+        try {
+            chrome.storage.onChanged.addListener(listener);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function safeRuntimeSendMessage(message, callback) {
+        if (!chrome?.runtime?.sendMessage) {
+            callback?.(undefined, new Error('Chrome runtime unavailable.'));
+            return false;
+        }
+
+        try {
+            chrome.runtime.sendMessage(message, (response) => {
+                callback?.(response, chrome.runtime.lastError || null);
+            });
+            return true;
+        } catch (error) {
+            callback?.(undefined, error);
+            return false;
+        }
+    }
+
+    function getStaticSubCourses(title) {
+        for (const [key, courses] of Object.entries(SPECIFIC_COURSES_MAP)) {
+            if (title.includes(key) || key.includes(title)) return courses;
+        }
+        return null;
+    }
+
+    function getRequirementChoiceConfig(title) {
+        const normalizedTitle = normalizeSearchText(title);
+        for (const [key, config] of Object.entries(REQUIREMENT_OPTION_MAP)) {
+            const normalizedKey = normalizeSearchText(key);
+            if (normalizedTitle.includes(normalizedKey) || normalizedKey.includes(normalizedTitle)) {
+                return config;
+            }
+        }
+        return null;
+    }
+
+    function escapeHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // ── MUI Autocomplete Helpers ──
+
+    let trackerSearchFeedbackTimer = 0;
+
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    function normalizeSearchText(text) {
+        return String(text || '')
+            .toLowerCase()
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function normalizeFieldLabelText(text) {
+        return normalizeSearchText(
+            String(text || '')
+                .replace(/\*/g, '')
+                .replace(/\s*:\s*$/g, '')
+        );
+    }
+
+    function tokenizeFieldLabelText(text) {
+        return normalizeFieldLabelText(text)
+            .replace(/[^\w\s]/g, ' ')
+            .split(' ')
+            .map((token) => token.trim())
+            .filter(Boolean);
+    }
+
+    function isFieldLabelMatch(actualText, desiredText) {
+        const actual = normalizeFieldLabelText(actualText);
+        const desired = normalizeFieldLabelText(desiredText);
+        if (!actual || !desired) return false;
+        if (actual === desired) return true;
+
+        const actualTokens = tokenizeFieldLabelText(actual);
+        const desiredTokens = tokenizeFieldLabelText(desired);
+        if (!actualTokens.length || !desiredTokens.length) return false;
+
+        if (actualTokens.length === desiredTokens.length) {
+            return actualTokens.every((token, index) => token === desiredTokens[index]);
+        }
+
+        // Allow longer rendered labels that fully contain the desired label,
+        // but do not let a shorter label like "Course Attribute" match
+        // "Course Attribute Value".
+        if (actualTokens.length > desiredTokens.length) {
+            return desiredTokens.every((token) => actualTokens.includes(token));
+        }
+
+        return false;
+    }
+
+    function escapeSelectorId(value) {
+        const raw = String(value || '');
+        if (window.CSS?.escape) return window.CSS.escape(raw);
+        return raw.replace(/([ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
+    }
+
+    function escapeSelectorAttrValue(value) {
+        return String(value || '')
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"');
+    }
+
+    function findInputWithinElement(element) {
+        if (!element) return null;
+        if (element.matches?.('input:not([type="hidden"])')) return element;
+        return element.querySelector?.('input:not([type="hidden"])') || null;
+    }
+
+    function expandFieldSelector(selector) {
+        const trimmed = String(selector || '').trim();
+        if (!trimmed) return [];
+
+        const expanded = [trimmed];
+        const inputIdMatch = trimmed.match(/^input#([A-Za-z0-9_:$.-]+)$/);
+        if (!inputIdMatch) return expanded;
+
+        const token = inputIdMatch[1];
+        const escapedId = escapeSelectorId(token);
+        const escapedAttr = escapeSelectorAttrValue(token);
+
+        expanded.push(
+            `#${escapedId}`,
+            `[id="${escapedAttr}"]`,
+            `[id^="${escapedAttr}"]`,
+            `[id*="${escapedAttr}"]`,
+            `[name="${escapedAttr}"]`,
+            `[name^="${escapedAttr}"]`,
+            `[name*="${escapedAttr}"]`
+        );
+
+        return Array.from(new Set(expanded));
+    }
+
+    function findInputBySelectors(selectors) {
+        for (const selector of selectors || []) {
+            for (const candidate of expandFieldSelector(selector)) {
+                let elements = [];
+                try {
+                    elements = Array.from(document.querySelectorAll(candidate));
+                } catch (_) {
+                    continue;
+                }
+
+                for (const element of elements) {
+                    if (!element) continue;
+
+                    if (element.matches?.('label[for]')) {
+                        const linkedInput = document.getElementById(element.getAttribute('for'));
+                        if (linkedInput && linkedInput.matches?.('input:not([type="hidden"])')) {
+                            return linkedInput;
+                        }
+                    }
+
+                    const input = findInputWithinElement(element);
+                    if (input) return input;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function findClassSearchFieldInputByToken(token) {
+        return findInputBySelectors(token ? [`input#${token}`] : []);
+    }
+
+    function findClassSearchSearchButton() {
+        const selectors = [
+            'a[id*="CLASS_SRCH"][id*="PB_CLASS_SRCH"]',
+            'button[id*="CLASS_SRCH"][id*="PB_CLASS_SRCH"]',
+            'input[id*="CLASS_SRCH"][id*="PB_CLASS_SRCH"]',
+            'a[id^="CLASS_SRCH_WRK2_SSR_PB_CLASS_SRCH"]',
+            'button[type="submit"]',
+            'button[aria-label="Search"]'
+        ];
+
+        for (const selector of selectors) {
+            const button = document.querySelector(selector);
+            if (button) return button;
+        }
+
+        return null;
+    }
+
+    function findClassSearchResetButton() {
+        const buttons = Array.from(document.querySelectorAll('button, a, input[type="button"], input[type="submit"]'));
+        return buttons.find((button) => {
+            const text = normalizeSearchText(
+                button.innerText ||
+                button.textContent ||
+                button.getAttribute?.('aria-label') ||
+                button.getAttribute?.('value') ||
+                ''
+            );
+            return text === 'reset filters';
+        }) || null;
+    }
+
+    function isButtonUsable(button) {
+        if (!button) return false;
+        if ('disabled' in button && button.disabled) return false;
+        return normalizeSearchText(button.getAttribute?.('aria-disabled')) !== 'true';
+    }
+
+    async function waitForFieldInput(labelText, extraSelectors, timeoutMs) {
+        const deadline = Date.now() + (timeoutMs || 4000);
+
+        while (Date.now() < deadline) {
+            const input = findFieldInput(labelText, extraSelectors);
+            if (input) return input;
+            await delay(100);
+        }
+
+        return findFieldInput(labelText, extraSelectors);
+    }
+
+    async function waitForClassSearchFormReady(timeoutMs) {
+        const deadline = Date.now() + (timeoutMs || 4000);
+        const sentinels = [
+            { label: 'Term', selectors: ['input#TERM'] },
+            { label: 'Acad Career', selectors: ['input#ACAD_CAREER'] },
+            { label: 'Subject', selectors: ['input#SUBJECT'] },
+            { label: 'Catalog Nbr', selectors: ['input#CATALOG_NBR'] },
+        ];
+
+        while (Date.now() < deadline) {
+            const readyFieldCount = sentinels.filter(({ label, selectors }) => findFieldInput(label, selectors)).length;
+            const hasSearchButton = isButtonUsable(findClassSearchSearchButton());
+
+            if (hasSearchButton && readyFieldCount >= 2) return true;
+
+            await delay(100);
+        }
+
+        const readyFieldCount = sentinels.filter(({ label, selectors }) => findFieldInput(label, selectors)).length;
+        const hasSearchButton = isButtonUsable(findClassSearchSearchButton());
+        return hasSearchButton && readyFieldCount >= 2;
+    }
+
+    async function waitForSearchButtonReady(timeoutMs) {
+        const deadline = Date.now() + (timeoutMs || 2500);
+
+        while (Date.now() < deadline) {
+            const button = findClassSearchSearchButton();
+            if (isButtonUsable(button)) return button;
+            await delay(100);
+        }
+
+        const button = findClassSearchSearchButton();
+        return isButtonUsable(button) ? button : null;
+    }
+
+    function normalizeLookupTitle(text) {
+        return normalizeSearchText(stripRequirementPrefix(text))
+            .replace(/[^\w\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function tokenizeLookupTitle(text) {
+        return normalizeLookupTitle(text)
+            .split(' ')
+            .map((token) => token.trim())
+            .filter((token) => token && token.length > 1 && !REQUIREMENT_LOOKUP_STOP_WORDS.has(token));
+    }
+
+    function dedupeStrings(values) {
+        return [...new Set((Array.isArray(values) ? values : []).map((value) => String(value || '').trim()).filter(Boolean))];
+    }
+
+    function normalizeProgramMatchText(text) {
+        return normalizeSearchText(String(text || ''))
+            .replace(/[–—-]/g, ' ')
+            .replace(/[^\w\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function tokenizeProgramMatchText(text) {
+        return normalizeProgramMatchText(text)
+            .split(' ')
+            .map((token) => token.trim())
+            .filter((token) => token && token.length > 1 && !REQUIREMENT_LOOKUP_STOP_WORDS.has(token));
+    }
+
+    async function loadProgramIndexData() {
+        if (programIndexData) return programIndexData;
+        if (!PROGRAM_INDEX_DATA_URL) return { programs: {}, catalogYear: '' };
+        if (!programIndexPromise) {
+            programIndexPromise = fetch(PROGRAM_INDEX_DATA_URL)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`Program index request failed with ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((payload) => {
+                    programIndexData = payload || { programs: {}, catalogYear: '' };
+                    return programIndexData;
+                })
+                .catch((error) => {
+                    console.warn('[TarHeelRatings] Failed to load program index data:', error);
+                    programIndexData = { programs: {}, catalogYear: '' };
+                    return programIndexData;
+                });
+        }
+
+        return programIndexPromise;
+    }
+
+    async function loadRequirementLookupEntries() {
+        if (Array.isArray(requirementLookupEntries)) return requirementLookupEntries;
+        if (!REQUIREMENT_LOOKUP_DATA_URL) return [];
+        if (!requirementLookupPromise) {
+            requirementLookupPromise = fetch(REQUIREMENT_LOOKUP_DATA_URL)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`Lookup data request failed with ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((payload) => {
+                    requirementLookupEntries = Array.isArray(payload?.entries) ? payload.entries : [];
+                    return requirementLookupEntries;
+                })
+                .catch((error) => {
+                    console.warn('[TarHeelRatings] Failed to load requirement lookup data:', error);
+                    requirementLookupEntries = [];
+                    return requirementLookupEntries;
+                });
+        }
+
+        return requirementLookupPromise;
+    }
+
+    function buildRequirementSearchVariants(requirement) {
+        const title = String(requirement?.title || '');
+        const strippedTitle = stripRequirementPrefix(title) || title;
+        const sectionLabel = String(requirement?.sectionLabel || '');
+        return dedupeStrings([
+            title,
+            strippedTitle,
+            sectionLabel,
+            sectionLabel && strippedTitle ? `${sectionLabel}: ${strippedTitle}` : '',
+        ]).filter((value) => !/^(Major Rules|Minor Courses|Minor Rules|Core Courses|Electives):?$/i.test(value));
+    }
+
+    function scoreTextVariants(searchVariants, targetVariants) {
+        let bestScore = 0;
+
+        searchVariants.forEach((searchVariant) => {
+            const normalizedSearch = normalizeProgramMatchText(searchVariant);
+            if (!normalizedSearch) return;
+
+            targetVariants.forEach((targetVariant) => {
+                const normalizedTarget = normalizeProgramMatchText(targetVariant);
+                if (!normalizedTarget) return;
+
+                if (normalizedSearch === normalizedTarget) {
+                    bestScore = Math.max(bestScore, 100);
+                    return;
+                }
+
+                if (normalizedSearch.includes(normalizedTarget) || normalizedTarget.includes(normalizedSearch)) {
+                    bestScore = Math.max(bestScore, 86);
+                    return;
+                }
+
+                const searchTokens = tokenizeProgramMatchText(normalizedSearch);
+                const targetTokens = tokenizeProgramMatchText(normalizedTarget);
+                if (!searchTokens.length || !targetTokens.length) return;
+
+                const overlapCount = searchTokens.filter((token) => targetTokens.includes(token)).length;
+                if (overlapCount === 0) return;
+                if (overlapCount === 1 && Math.min(searchTokens.length, targetTokens.length) > 1) return;
+
+                const tokenScore = Math.round((overlapCount / Math.max(searchTokens.length, targetTokens.length)) * 78);
+                bestScore = Math.max(bestScore, tokenScore);
+            });
+        });
+
+        return bestScore;
+    }
+
+    function getRequirementProgramContext(requirement, trackerContext) {
+        const activePrograms = Array.isArray(trackerContext?.activePrograms) ? trackerContext.activePrograms : [];
+        return activePrograms.find((program) =>
+            program.label === requirement?.programLabel &&
+            program.kind === requirement?.programKind
+        ) || null;
+    }
+
+    function findProgramGroupMatches(program, requirement) {
+        const groups = Array.isArray(program?.groups) ? program.groups : [];
+        const searchVariants = buildRequirementSearchVariants(requirement);
+        if (!groups.length || !searchVariants.length) return [];
+
+        const scoredGroups = groups
+            .map((group) => {
+                const groupVariants = dedupeStrings([
+                    group.title,
+                    group.header,
+                    group.header && group.title ? `${group.header}: ${group.title}` : '',
+                ]);
+                const score = scoreTextVariants(searchVariants, groupVariants);
+                return { group, score };
+            })
+            .filter(({ group, score }) => score >= 55 && Array.isArray(group?.courses) && group.courses.length > 0)
+            .sort((a, b) => b.score - a.score);
+
+        if (!scoredGroups.length) return [];
+        const bestScore = scoredGroups[0].score;
+        return scoredGroups.filter(({ score }) => score >= Math.max(55, bestScore - 6));
+    }
+
+    async function resolveProgramScopedCandidateCourses(requirement, trackerContext) {
+        const programMatch = getRequirementProgramContext(requirement, trackerContext);
+        if (!programMatch?.matched || !programMatch.programSlug) return null;
+
+        const programIndex = await loadProgramIndexData();
+        const program = programIndex?.programs?.[programMatch.programSlug];
+        if (!program) return null;
+
+        const matches = findProgramGroupMatches(program, requirement);
+        if (!matches.length) return null;
+
+        const courses = dedupeStrings(matches.flatMap(({ group }) => group.courses)).slice(0, 24);
+        if (!courses.length) return null;
+
+        const sharedPrograms = [];
+        const activePrograms = Array.isArray(trackerContext?.activePrograms) ? trackerContext.activePrograms : [];
+        activePrograms.forEach((otherProgramMatch) => {
+            if (!otherProgramMatch?.matched || otherProgramMatch.programSlug === programMatch.programSlug) return;
+            const otherProgram = programIndex?.programs?.[otherProgramMatch.programSlug];
+            if (!otherProgram) return;
+
+            const otherMatches = findProgramGroupMatches(otherProgram, requirement);
+            if (!otherMatches.length) return;
+
+            const otherCourses = dedupeStrings(otherMatches.flatMap(({ group }) => group.courses));
+            const overlap = courses.filter((course) => otherCourses.includes(course));
+            if (!overlap.length) return;
+
+            sharedPrograms.push({
+                title: otherProgramMatch.programTitle || otherProgram.title || otherProgramMatch.label,
+                overlapCount: overlap.length,
+            });
+        });
+
+        return {
+            courses,
+            source: 'program_catalog',
+            label: 'Possible Courses',
+            matchTitle: matches[0].group.title,
+            matchTitles: dedupeStrings(matches.map(({ group }) => group.title)),
+            programs: [{
+                slug: program.slug,
+                title: programMatch.programTitle || program.title,
+                kind: program.kind,
+            }],
+            sharedPrograms,
+        };
+    }
+
+    function scoreLookupEntry(title, entry) {
+        const normalizedTitle = normalizeLookupTitle(title);
+        const normalizedEntryTitle = normalizeLookupTitle(entry?.normalizedTitle || entry?.title || '');
+
+        if (!normalizedTitle || !normalizedEntryTitle) return 0;
+        if (normalizedTitle === normalizedEntryTitle) return 100;
+        if (normalizedTitle.includes(normalizedEntryTitle) || normalizedEntryTitle.includes(normalizedTitle)) return 82;
+
+        const titleTokens = tokenizeLookupTitle(normalizedTitle);
+        const entryTokens = Array.isArray(entry?.tokens) && entry.tokens.length
+            ? entry.tokens.map((token) => normalizeLookupTitle(token)).filter(Boolean)
+            : tokenizeLookupTitle(normalizedEntryTitle);
+
+        if (!titleTokens.length || !entryTokens.length) return 0;
+
+        const overlapCount = titleTokens.filter((token) => entryTokens.includes(token)).length;
+        if (overlapCount === 0) return 0;
+        if (overlapCount === 1 && Math.min(titleTokens.length, entryTokens.length) > 1) return 0;
+
+        return Math.round((overlapCount / Math.max(titleTokens.length, entryTokens.length)) * 70);
+    }
+
+    async function findRequirementLookupMatch(title) {
+        const entries = await loadRequirementLookupEntries();
+        if (!entries.length) return null;
+
+        let bestMatch = null;
+        let bestScore = 0;
+
+        entries.forEach((entry) => {
+            const score = scoreLookupEntry(title, entry);
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = entry;
+            }
+        });
+
+        if (!bestMatch || bestScore < 55) return null;
+        return { entry: bestMatch, score: bestScore };
+    }
+
+    async function resolveRequirementCandidateCourses(requirement, trackerContext) {
+        const title = String(requirement?.title || requirement || '');
+        const staticCourses = getStaticSubCourses(title);
+        if (staticCourses?.length) {
+            return {
+                courses: staticCourses,
+                source: 'static',
+                label: 'Fulfilling Courses',
+            };
+        }
+
+        if (requirement?.programSlug) {
+            const programScoped = await resolveProgramScopedCandidateCourses(requirement, trackerContext);
+            if (programScoped?.courses?.length) {
+                return programScoped;
+            }
+            return null;
+        }
+
+        if (requirement?.programLabel && !requirement?.programSlug) {
+            return null;
+        }
+
+        const lookupMatch = await findRequirementLookupMatch(title);
+        const courses = lookupMatch?.entry?.courses || [];
+        if (!courses.length) return null;
+
+        return {
+            courses: courses.slice(0, 18),
+            source: 'catalog',
+            label: 'Possible Courses',
+            matchTitle: lookupMatch.entry.title,
+            programs: Array.isArray(lookupMatch.entry.programs) ? lookupMatch.entry.programs : [],
+            score: lookupMatch.score,
+        };
+    }
+
+    function buildSubcourseSectionHtml(courses, metadata = {}) {
+        if (!Array.isArray(courses) || !courses.length) return '';
+
+        let metaHtml = '';
+        if ((metadata?.source === 'catalog' || metadata?.source === 'program_catalog') && metadata.matchTitle) {
+            const programTitle = metadata.programs?.[0]?.title || '';
+            const sourcePrefix = metadata.source === 'program_catalog' ? 'Program match' : 'Catalog match';
+            const sourceText = programTitle
+                ? `${sourcePrefix}: ${metadata.matchTitle} (${programTitle})`
+                : `${sourcePrefix}: ${metadata.matchTitle}`;
+            metaHtml += '<div class="thr-subcourses-meta">' + escapeHtml(sourceText) + '</div>';
+        }
+        if (metadata?.sharedPrograms?.length) {
+            const sharedText = metadata.sharedPrograms
+                .map((program) => program.title)
+                .filter(Boolean)
+                .join(', ');
+            if (sharedText) {
+                metaHtml += '<div class="thr-subcourses-meta">Also matches: ' + escapeHtml(sharedText) + '</div>';
+            }
+        }
+
+        let html = '<div class="thr-tracker-card-actions thr-subcourses">' +
+            '<div class="thr-tracker-card-actions-label">' + escapeHtml(metadata?.label || 'Possible Courses') + ':</div>' +
+            metaHtml +
+            '<div class="thr-tracker-card-actions-grid">';
+
+        courses.forEach((course) => {
+            html += '<button class="thr-subcourse-btn" data-thr-action-control="1" data-course="' + escapeHtml(course) + '">' + escapeHtml(course) + '</button>';
+        });
+
+        html += '</div></div>';
+        return html;
+    }
+
+    function buildRequirementChoiceSectionHtml(config) {
+        if (!config?.options?.length) return '';
+
+        let metaHtml = '';
+        if (config.sourceNote) {
+            metaHtml = '<div class="thr-subcourses-meta">' + escapeHtml(config.sourceNote) + '</div>';
+        }
+
+        let html = '<div class="thr-tracker-card-actions thr-subcourses">' +
+            '<div class="thr-tracker-card-actions-label">' + escapeHtml(config.label || 'Choose an Option') + ':</div>' +
+            metaHtml +
+            '<div class="thr-tracker-card-actions-grid">';
+
+        config.options.forEach((option) => {
+            html += '<button class="thr-requirement-option-btn" data-thr-action-control="1" data-search-title="' + escapeHtml(option.searchTitle) + '">' + escapeHtml(option.label) + '</button>';
+        });
+
+        html += '</div></div>';
+        return html;
+    }
+
+    function appendSubcourseSection(card, courses, metadata) {
+        if (!card || !Array.isArray(courses) || !courses.length) return null;
+        const existing = card.querySelector('.thr-subcourses');
+        if (existing) return existing;
+
+        card.insertAdjacentHTML('beforeend', buildSubcourseSectionHtml(courses, metadata));
+        return card.querySelector('.thr-subcourses');
+    }
+
+    function loadClassSearchPreferences() {
+        return new Promise((resolve) => {
+            if (!chrome?.storage?.local) {
+                resolve({ term: '', acadCareer: '' });
+                return;
+            }
+
+            safeLocalStorageGet(
+                [CLASS_SEARCH_PREF_KEYS.term, CLASS_SEARCH_PREF_KEYS.acadCareer],
+                (result) => {
+                    resolve({
+                        term: result[CLASS_SEARCH_PREF_KEYS.term] || '',
+                        acadCareer: result[CLASS_SEARCH_PREF_KEYS.acadCareer] || '',
+                    });
+                }
+            );
+        });
+    }
+
+    function saveClassSearchPreference(key, value) {
+        const cleanValue = String(value || '').trim();
+        if (!cleanValue || !chrome?.storage?.local) return;
+        safeLocalStorageSet({ [key]: cleanValue });
+    }
+
+    function setNativeInputValue(input, text) {
+        if (!input) return false;
+        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+        if (nativeSetter) nativeSetter.call(input, text);
+        else input.value = text;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+    }
+
+    function triggerElementClick(el) {
+        if (!el) return;
+        ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach(type => {
+            el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
+        });
+    }
+
+    function pressKey(input, key) {
+        if (!input) return;
+        input.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+    }
+
+    function getTrackerSearchStatusEl() {
+        return document.getElementById('thr-tracker-search-status');
+    }
+
+    function setTrackerToggleBusyState(isBusy) {
+        const toggle = document.querySelector('.thr-tracker-toggle');
+        if (!toggle) return;
+        toggle.dataset.busy = isBusy ? 'true' : 'false';
+        toggle.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    }
+
+    function setTrackerSearchStatus(message, tone, sticky) {
+        const statusEl = getTrackerSearchStatusEl();
+        if (!statusEl) return;
+        const isBusy = !!message && tone === 'info' && !!sticky;
+
+        clearTimeout(trackerSearchFeedbackTimer);
+        statusEl.textContent = message || '';
+        statusEl.dataset.tone = tone || 'info';
+        statusEl.dataset.busy = isBusy ? 'true' : 'false';
+        statusEl.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+        statusEl.classList.toggle('thr-tracker-search-status--visible', !!message);
+        setTrackerToggleBusyState(isBusy);
+
+        if (message && !sticky) {
+            trackerSearchFeedbackTimer = window.setTimeout(() => {
+                statusEl.textContent = '';
+                statusEl.classList.remove('thr-tracker-search-status--visible');
+                statusEl.dataset.tone = 'info';
+                statusEl.dataset.busy = 'false';
+                statusEl.setAttribute('aria-busy', 'false');
+                setTrackerToggleBusyState(false);
+            }, 4500);
+        }
+    }
+
+    function clearTrackerSearchStatus() {
+        setTrackerSearchStatus('', 'info', false);
+    }
+
+    function setTrackerCardSearching(cardKey, fallbackTitle) {
+        document.querySelectorAll('.thr-tracker-card--searching').forEach(card => {
+            card.classList.remove('thr-tracker-card--searching');
+        });
+
+        const card = cardKey
+            ? document.querySelector(`.thr-tracker-card[data-req-key="${escapeSelectorAttrValue(cardKey)}"]`)
+            : Array.from(document.querySelectorAll('.thr-tracker-card[data-req-title]'))
+                .find((el) => el.getAttribute('data-req-title') === fallbackTitle);
+        if (card) {
+            card.classList.add('thr-tracker-card--searching');
+        }
+    }
+
+    function clearTrackerCardSearching() {
+        document.querySelectorAll('.thr-tracker-card--searching').forEach(card => {
+            card.classList.remove('thr-tracker-card--searching');
+        });
+    }
+
+    /** Find an <input> by the text of its associated <label> */
+    function findInputByLabel(labelText) {
+        const labels = document.querySelectorAll('label');
+        for (const label of labels) {
+            if (isFieldLabelMatch(label.textContent || '', labelText)) {
+                // Method 1: label[for] → input[id]
+                const forId = label.getAttribute('for');
+                if (forId) {
+                    const input = document.getElementById(forId);
+                    if (input) return input;
+                }
+                // Method 2: input inside the same parent combobox container
+                const parent = label.closest('[role="combobox"]') || label.parentElement;
+                if (parent) {
+                    const input = parent.querySelector('input');
+                    if (input) return input;
+                }
+
+                const container = label.closest('[class*="MuiFormControl"], [class*="FormControl"], [role="presentation"], div');
+                if (container) {
+                    const input = container.querySelector('input');
+                    if (input) return input;
+                }
+            }
+        }
+
+        const ariaMatch = Array.from(document.querySelectorAll('input[aria-label], input[placeholder]')).find((input) => {
+            const ariaLabel = input.getAttribute('aria-label') || '';
+            const placeholder = input.getAttribute('placeholder') || '';
+            return (
+                isFieldLabelMatch(ariaLabel, labelText) ||
+                isFieldLabelMatch(placeholder, labelText)
+            );
+        });
+        if (ariaMatch) return ariaMatch;
+
+        return null;
+    }
+
+    function findFieldContainer(labelText, extraSelectors) {
+        const labels = document.querySelectorAll('label');
+        for (const label of labels) {
+            if (!isFieldLabelMatch(label.textContent || '', labelText)) continue;
+            const container = label.closest('[class*="MuiFormControl"], [class*="FormControl"], [role="presentation"], [role="combobox"], div');
+            if (container) return container;
+        }
+
+        const input = findInputBySelectors(extraSelectors);
+        if (!input) return null;
+        return input.closest('[class*="MuiFormControl"], [class*="FormControl"], [role="presentation"], [role="combobox"], div') || input.parentElement || null;
+    }
+
+    /** Type into an MUI Autocomplete input using React's native value setter */
+    function typeIntoMUI(input, text) {
+        if (!input) return false;
+        triggerElementClick(input);
+        input.focus();
+        return setNativeInputValue(input, text);
+    }
+
+    /** Wait for role="option" elements to appear, then find one matching `text` */
+    async function waitAndClickOption(matchText, timeoutMs, suppressWarning) {
+        const deadline = Date.now() + (timeoutMs || 3000);
+        const normalMatch = normalizeSearchText(matchText);
+
+        while (Date.now() < deadline) {
+            const options = document.querySelectorAll('[role="option"]');
+            let partialMatch = null;
+
+            for (const opt of options) {
+                const optText = normalizeSearchText(opt.textContent);
+                if (optText === normalMatch) {
+                    opt.scrollIntoView?.({ block: 'nearest' });
+                    triggerElementClick(opt);
+                    return true;
+                }
+
+                // Allow a longer desired label to match a shorter rendered option,
+                // but do not let a short fallback like "research" match
+                // "High-Impact: Research".
+                if (!partialMatch && normalMatch.includes(optText)) {
+                    partialMatch = opt;
+                }
+            }
+
+            if (partialMatch) {
+                partialMatch.scrollIntoView?.({ block: 'nearest' });
+                triggerElementClick(partialMatch);
+                return true;
+            }
+            await delay(100);
+        }
+        if (!suppressWarning) {
+            console.warn('[TarHeelRatings] Option not found:', matchText);
+        }
+        return false;
+    }
+
+    function findFieldInput(labelText, extraSelectors) {
+        const fromLabel = findInputByLabel(labelText);
+        if (fromLabel) return fromLabel;
+
+        return findInputBySelectors(extraSelectors);
+    }
+
+    function getFieldCurrentValue(labelText, extraSelectors) {
+        const input = findFieldInput(labelText, extraSelectors);
+        return String(input?.value || '').trim();
+    }
+
+    function getFieldVisibleText(labelText, extraSelectors) {
+        const container = findFieldContainer(labelText, extraSelectors);
+        if (!container) return '';
+        return normalizeSearchText(container.textContent || '');
+    }
+
+    function fieldContainsValue(labelText, extraSelectors, candidate) {
+        const normalizedCandidate = normalizeSearchText(candidate);
+        if (!normalizedCandidate) return false;
+
+        const inputValue = normalizeSearchText(getFieldCurrentValue(labelText, extraSelectors));
+        if (inputValue === normalizedCandidate || inputValue.includes(normalizedCandidate)) {
+            return true;
+        }
+
+        const visibleText = getFieldVisibleText(labelText, extraSelectors);
+        if (!visibleText) return false;
+
+        return visibleText.includes(normalizedCandidate);
+    }
+
+    function fieldMatchesAnyValue(labelText, extraSelectors, candidates) {
+        return (Array.isArray(candidates) ? candidates : [candidates])
+            .filter(Boolean)
+            .some((candidate) => fieldContainsValue(labelText, extraSelectors, candidate));
+    }
+
+    function getAutocompleteRetryConfig(overrides) {
+        return {
+            ...AUTOCOMPLETE_RETRY_CONFIG,
+            ...(overrides || {}),
+        };
+    }
+
+    function isFieldInteractive(labelText, extraSelectors) {
+        const input = findFieldInput(labelText, extraSelectors);
+        if (!input) return false;
+        if (input.disabled) return false;
+        const ariaDisabled = normalizeSearchText(input.getAttribute('aria-disabled'));
+        return ariaDisabled !== 'true';
+    }
+
+    async function waitForFieldInteractive(labelText, extraSelectors, timeoutMs) {
+        const deadline = Date.now() + (timeoutMs || 2500);
+        while (Date.now() < deadline) {
+            if (isFieldInteractive(labelText, extraSelectors)) return true;
+            await delay(75);
+        }
+        return isFieldInteractive(labelText, extraSelectors);
+    }
+
+    async function waitForFieldValue(labelText, extraSelectors, candidates, timeoutMs) {
+        const values = (Array.isArray(candidates) ? candidates : [candidates]).filter(Boolean);
+        const deadline = Date.now() + (timeoutMs || 2500);
+
+        while (Date.now() < deadline) {
+            if (values.some((candidate) => fieldContainsValue(labelText, extraSelectors, candidate))) {
+                return true;
+            }
+            await delay(75);
+        }
+
+        return values.some((candidate) => fieldContainsValue(labelText, extraSelectors, candidate));
+    }
+
+    /** Select a value in an MUI Autocomplete by label + option text */
+    async function selectMUIAutocomplete(labelText, optionText, extraSelectors, config) {
+        const effectiveConfig = getAutocompleteRetryConfig(config);
+        const input = await waitForFieldInput(labelText, extraSelectors, effectiveConfig.inputTimeoutMs);
+        if (!input) {
+            console.warn('[TarHeelRatings] Input not found for label:', labelText, extraSelectors || []);
+            return false;
+        }
+        const interactive = await waitForFieldInteractive(labelText, extraSelectors, effectiveConfig.interactiveTimeoutMs);
+        if (!interactive) {
+            console.warn('[TarHeelRatings] Field not interactive for label:', labelText, extraSelectors || []);
+            return false;
+        }
+
+        typeIntoMUI(input, '');
+        await delay(75);
+        typeIntoMUI(input, optionText);
+        await delay(200);
+
+        const clicked = await waitAndClickOption(optionText, effectiveConfig.optionTimeoutMs, true);
+        if (clicked) {
+            await delay(effectiveConfig.settleMs);
+            return waitForFieldValue(labelText, extraSelectors, [optionText], effectiveConfig.confirmTimeoutMs);
+        }
+
+        pressKey(input, 'ArrowDown');
+        await delay(125);
+        pressKey(input, 'Enter');
+        await delay(effectiveConfig.settleMs);
+
+        return waitForFieldValue(labelText, extraSelectors, [optionText], effectiveConfig.confirmTimeoutMs);
+    }
+
+    async function selectAnyAutocompleteOption(labelText, optionTexts, extraSelectors, config) {
+        const effectiveConfig = getAutocompleteRetryConfig(config);
+        const candidates = (Array.isArray(optionTexts) ? optionTexts : [optionTexts]).filter(Boolean);
+        const currentValue = normalizeSearchText(getFieldCurrentValue(labelText, extraSelectors));
+        if (candidates.some((candidate) => currentValue === normalizeSearchText(candidate))) {
+            return true;
+        }
+
+        for (let attempt = 0; attempt < effectiveConfig.attempts; attempt++) {
+            if (fieldMatchesAnyValue(labelText, extraSelectors, candidates)) {
+                return true;
+            }
+
+            for (const candidate of candidates) {
+                const selected = await selectMUIAutocomplete(labelText, candidate, extraSelectors, effectiveConfig);
+                if (selected) {
+                    return true;
+                }
+            }
+
+            if (attempt < effectiveConfig.attempts - 1) {
+                await delay(effectiveConfig.betweenAttemptsMs);
+            }
+        }
+
+        console.warn('[TarHeelRatings] Could not select any option for field:', labelText, candidates);
+        return false;
+    }
+
+    /** Find and click the Search button */
+    async function clickSearchButton() {
+        const btn = await waitForSearchButtonReady(3000);
+        if (btn) {
+            console.log('[TarHeelRatings] Clicking Search button');
+            btn.focus?.();
+            if (typeof btn.click === 'function') {
+                btn.click();
+            } else {
+                triggerElementClick(btn);
+            }
+            return true;
+        }
+        console.warn('[TarHeelRatings] Search button not found');
+        return false;
+    }
+
+    async function resetClassSearchFilters() {
+        const button = findClassSearchResetButton();
+        if (!button || !isButtonUsable(button)) {
+            return false;
+        }
+
+        console.log('[TarHeelRatings] Resetting Class Search filters');
+        button.focus?.();
+        if (typeof button.click === 'function') {
+            button.click();
+        } else {
+            triggerElementClick(button);
+        }
+
+        await delay(500);
+        return true;
+    }
+
+    function stripRequirementPrefix(title) {
+        return String(title || '')
+            .replace(/^(Course Check:|Subfield Check:)\s*/i, '')
+            .trim();
+    }
+
+    function findGenEdValue(title) {
+        const normalizedTitle = normalizeSearchText(title);
+        const match = Object.entries(GEN_ED_VALUE_MAP).find(([key]) => {
+            const normalizedKey = normalizeSearchText(key);
+            return normalizedTitle.includes(normalizedKey) || normalizedKey.includes(normalizedTitle);
+        })?.[1];
+
+        if (!match) return [];
+        return Array.isArray(match) ? match : [match];
+    }
+
+    async function ensureClassSearchDefaults() {
+        const prefs = await loadClassSearchPreferences();
+        const desiredAcadCareer = prefs.acadCareer || 'Undergraduate';
+        const desiredTerm = prefs.term || '';
+
+        if (desiredTerm) {
+            const termSet = await selectAnyAutocompleteOption('Term', [desiredTerm], ['input#TERM']);
+            if (termSet) {
+                saveClassSearchPreference(CLASS_SEARCH_PREF_KEYS.term, desiredTerm);
+            }
+        }
+
+        const acadSet = await selectAnyAutocompleteOption('Acad Career', [desiredAcadCareer, 'Undergraduate'], ['input#ACAD_CAREER']);
+        if (acadSet) {
+            const currentAcadCareer = getFieldCurrentValue('Acad Career', ['input#ACAD_CAREER']) || desiredAcadCareer;
+            saveClassSearchPreference(CLASS_SEARCH_PREF_KEYS.acadCareer, currentAcadCareer);
+        }
+    }
+
+    function wireClassSearchPreferencePersistence() {
+        const fields = [
+            { label: 'Term', selectors: ['input#TERM'], key: CLASS_SEARCH_PREF_KEYS.term },
+            { label: 'Acad Career', selectors: ['input#ACAD_CAREER'], key: CLASS_SEARCH_PREF_KEYS.acadCareer },
+        ];
+
+        fields.forEach(({ label, selectors, key }) => {
+            const input = findFieldInput(label, selectors);
+            if (!input || input.dataset.thrPrefBound === '1') return;
+
+            input.dataset.thrPrefBound = '1';
+            let saveTimer = 0;
+            const persist = () => {
+                window.clearTimeout(saveTimer);
+                saveTimer = window.setTimeout(() => {
+                    saveClassSearchPreference(key, input.value);
+                }, 250);
+            };
+
+            input.addEventListener('input', persist);
+            input.addEventListener('change', persist);
+            input.addEventListener('blur', persist);
+        });
+    }
+
+    function openCatalogSearch(title, message) {
+        const query = stripRequirementPrefix(title) || String(title || '').trim();
+        const searchUrl = 'https://catalog.unc.edu/search/?search=' + encodeURIComponent(query);
+        setTrackerSearchStatus(message || `Opening the UNC catalog for ${query}.`, 'success', false);
+        window.open(searchUrl, '_blank');
+    }
+
+    function reportClassSearchFailure(searchTitle, message) {
+        const errorMessage = message || `Couldn't stabilize Class Search filters for ${searchTitle}. Please retry.`;
+        console.warn('[TarHeelRatings]', errorMessage);
+        setTrackerSearchStatus(errorMessage, 'error', true);
+    }
+
+    function formatProgramKindLabel(kind) {
+        const normalized = normalizeSearchText(kind);
+        if (normalized === 'major') return 'Major';
+        if (normalized === 'minor') return 'Minor';
+        if (normalized === 'track') return 'Track';
+        if (normalized === 'concentration') return 'Concentration';
+        if (normalized === 'certificate') return 'Certificate';
+        if (normalized === 'additional') return 'Additional';
+        return 'Program';
+    }
+
+    function getRequirementSectionDescriptor(requirement, trackerContext) {
+        const programMatch = getRequirementProgramContext(requirement, trackerContext);
+        if (programMatch) {
+            const key = programMatch.programSlug
+                ? `program:${programMatch.programSlug}`
+                : `program:${programMatch.kind}:${programMatch.label}`;
+            return {
+                key,
+                title: programMatch.programTitle || programMatch.label,
+                eyebrow: formatProgramKindLabel(programMatch.kind),
+                matched: !!programMatch.matched,
+                note: programMatch.matched ? '' : 'Catalog match unavailable for this program yet.',
+                sortOrder: programMatch.order ?? 0,
+            };
+        }
+
+        if (requirement?.programLabel) {
+            return {
+                key: `program:${requirement.programKind || 'program'}:${requirement.programLabel}`,
+                title: requirement.programLabel,
+                eyebrow: formatProgramKindLabel(requirement.programKind),
+                matched: false,
+                note: 'Catalog match unavailable for this program yet.',
+                sortOrder: 999,
+            };
+        }
+
+        return {
+            key: TRACKER_GENERAL_SECTION_KEY,
+            title: 'General / University Requirements',
+            eyebrow: 'General',
+            matched: true,
+            note: '',
+            sortOrder: 10000,
+        };
+    }
+
+    function buildTrackerRequirementSections(requirements, trackerContext) {
+        const sections = [];
+        const byKey = new Map();
+
+        (Array.isArray(requirements) ? requirements : []).forEach((requirement) => {
+            const descriptor = getRequirementSectionDescriptor(requirement, trackerContext);
+            let section = byKey.get(descriptor.key);
+            if (!section) {
+                section = {
+                    ...descriptor,
+                    requirements: [],
+                };
+                byKey.set(descriptor.key, section);
+                sections.push(section);
+            }
+
+            section.requirements.push(requirement);
+        });
+
+        return sections.sort((a, b) => {
+            if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+            return a.title.localeCompare(b.title);
+        });
+    }
+
+    function buildTrackerContextNoticeHtml(trackerContext) {
+        if (!trackerContext?.usesApproximateCatalogYear) return '';
+
+        const trackerYear = escapeHtml(trackerContext.catalogYear || 'your tracker');
+        const sourceYear = escapeHtml(trackerContext.catalogSourceYear || 'the current UNC catalog');
+        return '<div class="thr-tracker-note">Program suggestions use the ' + sourceYear + ' catalog. Your tracker is on ' + trackerYear + ', so program-specific matches are approximate.</div>';
+    }
+
+    async function resolveRequirementActionDescriptor(requirement, trackerContext) {
+        const rawTitle = String(requirement?.title || '').trim();
+        const searchTitle = stripRequirementPrefix(rawTitle) || rawTitle;
+        const genEdValues = findGenEdValue(rawTitle).length ? findGenEdValue(rawTitle) : findGenEdValue(searchTitle);
+        if (genEdValues.length) {
+            return {
+                mode: 'direct-search',
+                note: `Runs a direct Class Search for ${genEdValues[0]}.`,
+            };
+        }
+
+        const courseMatch = searchTitle.match(/\b([A-Z]{2,5})\s+(\d{1,4}[A-Z]?)\b/i);
+        if (courseMatch) {
+            const subject = courseMatch[1].toUpperCase();
+            const catalog = courseMatch[2].toUpperCase();
+            return {
+                mode: 'direct-search',
+                note: `Runs a direct Class Search for ${subject} ${catalog}.`,
+            };
+        }
+
+        const choiceConfig = getRequirementChoiceConfig(rawTitle);
+        if (choiceConfig?.options?.length) {
+            return {
+                mode: 'button-actions',
+                note: 'Use one of the search actions below.',
+                choiceConfig,
+            };
+        }
+
+        const staticCourses = getStaticSubCourses(rawTitle);
+        if (staticCourses?.length) {
+            return {
+                mode: 'button-actions',
+                note: 'Use one of the search actions below.',
+                courses: staticCourses,
+                metadata: {
+                    label: 'Fulfilling Courses',
+                    source: 'static',
+                },
+            };
+        }
+
+        const resolved = await resolveRequirementCandidateCourses(requirement, trackerContext);
+        if (resolved?.courses?.length) {
+            return {
+                mode: 'button-actions',
+                note: 'Use one of the search actions below.',
+                courses: resolved.courses,
+                metadata: resolved,
+            };
+        }
+
+        return {
+            mode: 'disabled',
+            note: 'Direct Class Search is not available for this requirement yet.',
+        };
+    }
+
+    function buildTrackerRequirementCardHtml(requirement, reqKey, actionDescriptor = {}) {
+        const actionMode = actionDescriptor.mode || 'disabled';
+        const sectionMeta = requirement.sectionLabel &&
+            normalizeProgramMatchText(requirement.sectionLabel) !== normalizeProgramMatchText(requirement.title)
+            ? '<div class="thr-tracker-card-meta">' + escapeHtml(requirement.sectionLabel) + '</div>'
+            : '';
+        const subHtml = actionDescriptor.choiceConfig
+            ? buildRequirementChoiceSectionHtml(actionDescriptor.choiceConfig)
+            : (actionDescriptor.courses?.length ? buildSubcourseSectionHtml(actionDescriptor.courses, actionDescriptor.metadata) : '');
+        const actionNote = actionDescriptor.note
+            ? '<div class="thr-tracker-card-action-note">' + escapeHtml(actionDescriptor.note) + '</div>'
+            : '';
+        const titleText = actionMode === 'direct-search'
+            ? 'Click to run Class Search for this requirement'
+            : (actionMode === 'button-actions'
+                ? 'Use one of the search actions below'
+                : 'Direct Class Search is not available for this requirement');
+
+        return '<div class="thr-tracker-card" data-req-key="' + escapeHtml(reqKey) + '" data-req-title="' + escapeHtml(requirement.title) + '" data-thr-action-mode="' + escapeHtml(actionMode) + '" title="' + escapeHtml(titleText) + '">' +
+            '<div class="thr-tracker-card-top">' +
+            '<span class="thr-tracker-card-title">' + escapeHtml(requirement.title) + '</span>' +
+            '<span class="thr-tracker-card-status">' + ICON.warning + '</span>' +
+            '</div>' +
+            sectionMeta +
+            '<div class="thr-tracker-card-details">' + escapeHtml(requirement.details || '') + '</div>' +
+            actionNote +
+            subHtml +
+            '</div>';
+    }
+
+    async function runGenEdSearchAttempt(searchTitle, matchedValues) {
+        setTrackerSearchStatus('Setting Course Attribute to IDEA…', 'info', true);
+        const attributeSet = await selectAnyAutocompleteOption(
+            'Course Attribute',
+            ['IDEA'],
+            ['input#SSR_CLSRCH_WRK_COURSE_ATTR']
+        );
+        if (!attributeSet) {
+            return {
+                ok: false,
+                failureMessage: `Couldn't set Course Attribute to IDEA for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        const attributeConfirmed = await waitForFieldValue(
+            'Course Attribute',
+            ['input#SSR_CLSRCH_WRK_COURSE_ATTR'],
+            ['IDEA'],
+            2200
+        );
+        if (!attributeConfirmed) {
+            return {
+                ok: false,
+                failureMessage: `Course Attribute would not stay on IDEA for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        const valueInteractive = await waitForFieldInteractive(
+            'Course Attribute Value',
+            ['input#SSR_CLSRCH_WRK_COURSE_ATTR_VALUE'],
+            3500
+        );
+        if (!valueInteractive) {
+            return {
+                ok: false,
+                failureMessage: `Course Attribute Value is still loading for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        setTrackerSearchStatus(`Setting Course Attribute Value to ${matchedValues[0]}…`, 'info', true);
+        const valueSet = await selectAnyAutocompleteOption(
+            'Course Attribute Value',
+            matchedValues,
+            ['input#SSR_CLSRCH_WRK_COURSE_ATTR_VALUE']
+        );
+        if (!valueSet) {
+            return {
+                ok: false,
+                failureMessage: `Couldn't set Course Attribute Value for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        const attributeStillSet = await waitForFieldValue(
+            'Course Attribute',
+            ['input#SSR_CLSRCH_WRK_COURSE_ATTR'],
+            ['IDEA'],
+            1800
+        );
+        const valueStillSet = await waitForFieldValue(
+            'Course Attribute Value',
+            ['input#SSR_CLSRCH_WRK_COURSE_ATTR_VALUE'],
+            matchedValues,
+            1800
+        );
+        if (!attributeStillSet || !valueStillSet) {
+            return {
+                ok: false,
+                failureMessage: `The Class Search filters did not stay filled in for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        setTrackerSearchStatus('Running Class Search…', 'info', true);
+        const searched = await clickSearchButton();
+        if (!searched) {
+            return {
+                ok: false,
+                failureMessage: `Couldn't trigger Class Search for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        return { ok: true };
+    }
+
+    async function runCourseSearchAttempt(searchTitle, subject, catalog) {
+        setTrackerSearchStatus('Resetting existing filters for a direct course search…', 'info', true);
+        const reset = await resetClassSearchFilters();
+        if (reset) {
+            await ensureClassSearchDefaults();
+        }
+
+        setTrackerSearchStatus(`Setting Subject to ${subject}…`, 'info', true);
+        const subjectSet = await selectAnyAutocompleteOption('Subject', [subject], ['input#SUBJECT']);
+        if (!subjectSet) {
+            return {
+                ok: false,
+                failureMessage: `Couldn't set Subject to ${subject} for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        const subjectConfirmed = await waitForFieldValue('Subject', ['input#SUBJECT'], [subject], 1800);
+        if (!subjectConfirmed) {
+            return {
+                ok: false,
+                failureMessage: `Subject would not stay on ${subject} for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        const catInput = await waitForFieldInput('Catalog Nbr', ['input#CATALOG_NBR'], 4000);
+        if (!catInput) {
+            return {
+                ok: false,
+                failureMessage: `Couldn't find Catalog Number for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        setTrackerSearchStatus(`Setting Catalog Number to ${catalog}…`, 'info', true);
+        typeIntoMUI(catInput, '');
+        await delay(75);
+        typeIntoMUI(catInput, catalog);
+        const catalogConfirmed = await waitForFieldValue('Catalog Nbr', ['input#CATALOG_NBR'], [catalog], 1500);
+        if (!catalogConfirmed) {
+            return {
+                ok: false,
+                failureMessage: `Catalog Number would not stay on ${catalog} for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        setTrackerSearchStatus('Running Class Search…', 'info', true);
+        const searched = await clickSearchButton();
+        if (!searched) {
+            return {
+                ok: false,
+                failureMessage: `Couldn't trigger Class Search for ${searchTitle}. Please retry.`,
+            };
+        }
+
+        return { ok: true };
+    }
+
+    // ── Search Execution ──
+
+    async function handleRequirementClick(title, options = {}) {
+        if (!isClassSearchPage()) return;
+        const rawTitle = String(title || '').trim();
+        if (!rawTitle) return;
+        const cardKey = String(options?.cardKey || '').trim();
+        if (featureTutorialStep === CLASS_SEARCH_TUTORIAL_ACTION_STEP) {
+            completeClassSearchTutorial();
+        }
+
+        const searchTitle = stripRequirementPrefix(rawTitle) || rawTitle;
+        console.log('[TarHeelRatings] Auto-searching for:', searchTitle);
+        setTrackerCardSearching(cardKey, rawTitle);
+        setTrackerSearchStatus(`Working on ${searchTitle}…`, 'info', true);
+
+        try {
+            const formReady = await waitForClassSearchFormReady(8000);
+            if (!formReady) {
+                reportClassSearchFailure(searchTitle, 'Class Search is still loading. Please wait a moment and retry.');
+                return;
+            }
+
+            await ensureClassSearchDefaults();
+            const matchedValues = findGenEdValue(rawTitle).length ? findGenEdValue(rawTitle) : findGenEdValue(searchTitle);
+
+            if (matchedValues.length > 0) {
+                console.log('[TarHeelRatings] Gen Ed search: IDEA →', matchedValues[0]);
+                setTrackerSearchStatus(`Searching Class Search for IDEA: ${matchedValues[0]}.`, 'info', true);
+                let attemptResult = null;
+                for (let attempt = 0; attempt < 2; attempt++) {
+                    if (attempt > 0) {
+                        setTrackerSearchStatus(`Retrying Class Search for IDEA: ${matchedValues[0]}…`, 'info', true);
+                    }
+                    attemptResult = await runGenEdSearchAttempt(searchTitle, matchedValues);
+                    if (attemptResult?.ok) break;
+                    await delay(250);
+                }
+                if (!attemptResult?.ok) {
+                    reportClassSearchFailure(searchTitle, attemptResult?.failureMessage);
+                    return;
+                }
+
+                setTrackerSearchStatus(`Class Search updated for IDEA: ${matchedValues[0]}.`, 'success', false);
+                return;
+            }
+
+            const courseMatch = searchTitle.match(/\b([A-Z]{2,5})\s+(\d{1,4}[A-Z]?)\b/i);
+            if (courseMatch) {
+                const subject = courseMatch[1].toUpperCase();
+                const catalog = courseMatch[2].toUpperCase();
+                console.log('[TarHeelRatings] Course search:', subject, catalog);
+                setTrackerSearchStatus(`Searching Class Search for ${subject} ${catalog}.`, 'info', true);
+                let attemptResult = null;
+                for (let attempt = 0; attempt < 2; attempt++) {
+                    if (attempt > 0) {
+                        setTrackerSearchStatus(`Retrying Class Search for ${subject} ${catalog}…`, 'info', true);
+                    }
+                    attemptResult = await runCourseSearchAttempt(searchTitle, subject, catalog);
+                    if (attemptResult?.ok) break;
+                    await delay(250);
+                }
+                if (!attemptResult?.ok) {
+                    reportClassSearchFailure(searchTitle, attemptResult?.failureMessage);
+                    return;
+                }
+
+                setTrackerSearchStatus(`Class Search updated for ${subject} ${catalog}.`, 'success', false);
+                return;
+            }
+
+            reportClassSearchFailure(searchTitle, 'Direct Class Search is not available for this requirement yet.');
+        } catch (err) {
+            console.error('[TarHeelRatings] Auto-search error:', err);
+            setTrackerSearchStatus(err?.message || 'That search did not complete cleanly.', 'error', true);
+        } finally {
+            window.setTimeout(() => {
+                clearTrackerCardSearching();
+            }, 1200);
+        }
+    }
+
+
+
+    /* ── Tracker Sidebar Injection ── */
+    function injectTrackerSidebar() {
+        if (!isClassSearchPage()) return;
+        
+        // Prevent double injection in nested/hidden iframes
+        if (window !== window.top && window.name !== 'TargetContent' && document.body.clientWidth < 500) return;
+
+        if (document.getElementById('thr-tracker-container')) return;
+        // Clean up legacy sidebar if it exists
+        const legacy = document.getElementById('thr-tracker-sidebar');
+        if (legacy && !legacy.closest('#thr-tracker-container')) legacy.remove();
+
+        safeLocalStorageGet(['thr_missing_requirements', 'thr_tracker_context', 'thr_tracker_status', 'thr_tracker_error'], async (result) => {
+            const reqs = Array.isArray(result.thr_missing_requirements) ? result.thr_missing_requirements : [];
+            const trackerContext = result.thr_tracker_context || {};
+            const status = result.thr_tracker_status || '';
+            const error = result.thr_tracker_error || '';
+            const requirementRecordsByKey = new Map();
+            const requirementActionByRequirement = new WeakMap();
+            
+            // Double check inside the async callback to avoid race conditions
+            if (document.getElementById('thr-tracker-container')) return;
+
+            if (status && !['parsing', 'error', 'all_satisfied'].includes(status) && reqs.length) {
+                const actionRecords = await Promise.all(
+                    reqs.map(async (requirement) => ({
+                        requirement,
+                        actionDescriptor: await resolveRequirementActionDescriptor(requirement, trackerContext),
+                    }))
+                );
+                actionRecords.forEach(({ requirement, actionDescriptor }) => {
+                    requirementActionByRequirement.set(requirement, actionDescriptor);
+                });
+
+                if (document.getElementById('thr-tracker-container')) return;
+            }
+
+            const container = document.createElement('div');
+            container.id = 'thr-tracker-container';
+            container.className = 'thr-tracker-container';
+
+            const toggle = document.createElement('button');
+            toggle.className = 'thr-tracker-toggle';
+            let badgeText = '0';
+            let badgeStyle = 'background:#64748b;';
+            if (status === 'parsing') {
+                badgeText = '...';
+                badgeStyle = 'background:#2563eb;';
+            } else if (status === 'error') {
+                badgeText = '!';
+                badgeStyle = 'background:#b91c1c;';
+            } else if (status === 'parsed') {
+                badgeText = String(reqs.length);
+                badgeStyle = 'background:#e11d48;';
+            } else if (status === 'all_satisfied') {
+                badgeText = '0';
+                badgeStyle = 'background:#15803d;';
+            } else {
+                badgeText = '—';
+            }
+            toggle.innerHTML = '<span class="thr-tracker-toggle-icon">' + ICON.warning + '</span><span style="margin-left:6px;">Tracker</span> <span class="thr-tracker-badge" style="margin-left:8px;' + badgeStyle + '">' + badgeText + '</span>';
+
+            const sidebar = document.createElement('aside');
+            sidebar.id = 'thr-tracker-sidebar';
+            sidebar.className = 'thr-tracker-sidebar';
+
+            let html = '<div class="thr-tracker-header">' +
+                '<h3>TarHeel Tracker</h3>' +
+                '<button class="thr-tracker-close" style="background:none;border:none;color:white;cursor:pointer;font-size:24px;line-height:1;margin-top:-4px;" title="Close">&times;</button>' +
+                '</div>' +
+                '<div id="thr-tracker-search-status" class="thr-tracker-search-status" aria-live="polite"></div>' +
+                '<div class="thr-tracker-content">';
+
+            if (status === 'parsing') {
+                html += '<div class="thr-tracker-card" style="text-align:center;padding:24px 16px;">' +
+                    '<div style="font-size:24px;margin-bottom:8px;">⏳</div>' +
+                    '<div style="color:#2563eb;font-weight:700;font-size:14px;">Syncing your Tar Heel Tracker...</div>' +
+                    '<div style="color:var(--thr-text-secondary);font-size:12px;margin-top:6px;">Keep the tracker page open until syncing finishes.</div>' +
+                    '</div>';
+            } else if (status === 'error') {
+                html += '<div class="thr-tracker-card" style="text-align:center;padding:24px 16px;">' +
+                    '<div style="font-size:24px;margin-bottom:8px;">⚠️</div>' +
+                    '<div style="color:#b91c1c;font-weight:700;font-size:14px;">Tracker sync failed</div>' +
+                    '<div style="color:var(--thr-text-secondary);font-size:12px;margin-top:6px;">' + escapeHtml(error || 'Open the tracker page again and click Sync Requirements.') + '</div>' +
+                    '</div>';
+            } else if (!status) {
+                html += '<div class="thr-tracker-card" style="text-align:center;padding:24px 16px;">' +
+                    '<div style="font-size:24px;margin-bottom:8px;">📄</div>' +
+                    '<div style="color:var(--thr-carolina-blue-dark);font-weight:700;font-size:14px;">No Tracker data synced yet</div>' +
+                    '<div style="color:var(--thr-text-secondary);font-size:12px;margin-top:6px;">Open the Tar Heel Tracker page and click Sync Requirements.</div>' +
+                    '</div>';
+            } else if (status === 'all_satisfied') {
+                html += '<div class="thr-tracker-card" style="text-align:center;padding:24px 16px;">' +
+                    '<div style="font-size:24px;margin-bottom:8px;">🎉</div>' +
+                    '<div style="color:#15803d;font-weight:700;font-size:14px;">All Tracked Requirements Satisfied!</div>' +
+                    '<div style="color:var(--thr-text-secondary);font-size:12px;margin-top:6px;">Visit the Tar Heel Tracker page to sync your data.</div>' +
+                    '</div>';
+            } else {
+                html += buildTrackerContextNoticeHtml(trackerContext);
+
+                const sections = buildTrackerRequirementSections(reqs, trackerContext);
+                let requirementIndex = 0;
+
+                sections.forEach((section) => {
+                    html += '<section class="thr-tracker-section">' +
+                        '<div class="thr-tracker-section-header">' +
+                        '<div class="thr-tracker-section-eyebrow">' + escapeHtml(section.eyebrow) + '</div>' +
+                        '<div class="thr-tracker-section-title">' + escapeHtml(section.title) + '</div>' +
+                        (section.note ? '<div class="thr-tracker-section-note">' + escapeHtml(section.note) + '</div>' : '') +
+                        '</div>';
+
+                    section.requirements.forEach((requirement) => {
+                        const reqKey = `req-${requirementIndex++}`;
+                        const actionDescriptor = requirementActionByRequirement.get(requirement) || { mode: 'disabled', note: 'Direct Class Search is not available for this requirement yet.' };
+                        requirementRecordsByKey.set(reqKey, { requirement, actionDescriptor });
+                        html += buildTrackerRequirementCardHtml(requirement, reqKey, actionDescriptor);
+                    });
+
+                    html += '</section>';
+                });
+            }
+
+            html += '</div>';
+            sidebar.innerHTML = html;
+
+            container.appendChild(toggle);
+            container.appendChild(sidebar);
+            document.body.appendChild(container);
+
+            // Pop-out logic
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                container.classList.toggle('thr-open');
+                if (container.classList.contains('thr-open')) {
+                    toggle.style.opacity = '0';
+                    toggle.style.pointerEvents = 'none';
+                }
+            });
+
+            container.querySelector('.thr-tracker-close').addEventListener('click', (e) => {
+                e.stopPropagation();
+                container.classList.remove('thr-open');
+                toggle.style.opacity = '1';
+                toggle.style.pointerEvents = 'auto';
+            });
+
+            // Click outside to close
+            document.addEventListener('click', (e) => {
+                if (container.classList.contains('thr-open') && !container.contains(e.target)) {
+                    container.classList.remove('thr-open');
+                    toggle.style.opacity = '1';
+                    toggle.style.pointerEvents = 'auto';
+                }
+            });
+
+            // Handle Card Clicks for Auto-Search
+            sidebar.addEventListener('click', async (e) => {
+                // Check if they clicked a sub-course button
+                const subBtn = e.target.closest('.thr-subcourse-btn');
+                if (subBtn) {
+                    e.stopPropagation();
+                    const c = subBtn.getAttribute('data-course');
+                    const cardKey = subBtn.closest('.thr-tracker-card')?.getAttribute('data-req-key') || '';
+                    if (c) handleRequirementClick(c, { cardKey });
+                    return;
+                }
+
+                const optionBtn = e.target.closest('.thr-requirement-option-btn');
+                if (optionBtn) {
+                    e.stopPropagation();
+                    const optionTitle = optionBtn.getAttribute('data-search-title');
+                    const cardKey = optionBtn.closest('.thr-tracker-card')?.getAttribute('data-req-key') || '';
+                    if (optionTitle) handleRequirementClick(optionTitle, { cardKey });
+                    return;
+                }
+
+                const card = e.target.closest('.thr-tracker-card');
+                if (card) {
+                    const actionMode = card.getAttribute('data-thr-action-mode') || '';
+                    if (actionMode !== 'direct-search') return;
+
+                    const reqKey = card.getAttribute('data-req-key') || '';
+                    const requirement = requirementRecordsByKey.get(reqKey)?.requirement;
+                    const title = requirement?.title || card.getAttribute('data-req-title');
+                    if (!title) return;
+                    handleRequirementClick(title, { cardKey: reqKey });
+                }
+            });
+
+            queueClassSearchTutorialRefresh();
+        });
+    }
+
+    function loadFeatureTutorialStep(callback) {
+        safeLocalStorageGet([FEATURE_TUTORIAL_STORAGE_KEY], (result) => {
+            featureTutorialStep = result[FEATURE_TUTORIAL_STORAGE_KEY] || '';
+            featureTutorialStepLoaded = true;
+            if (callback) callback(featureTutorialStep);
+        });
+    }
+
+    function ensureFeatureTutorialStepLoaded(callback) {
+        if (featureTutorialStepLoaded) {
+            if (callback) callback(featureTutorialStep);
+            return;
+        }
+
+        loadFeatureTutorialStep(callback);
+    }
+
+    function setFeatureTutorialStep(step) {
+        featureTutorialStep = String(step || '').trim();
+        if (featureTutorialStep) {
+            safeLocalStorageSet({ [FEATURE_TUTORIAL_STORAGE_KEY]: featureTutorialStep });
+        } else {
+            safeLocalStorageRemove([FEATURE_TUTORIAL_STORAGE_KEY]);
+        }
+    }
+
+    function clearFeatureTutorialStep() {
+        setFeatureTutorialStep('');
+    }
+
+    function clearClassSearchTutorialCompletion() {
+        classSearchTutorialCompletedAt = 0;
+        if (classSearchTutorialCompletionTimer) {
+            window.clearTimeout(classSearchTutorialCompletionTimer);
+            classSearchTutorialCompletionTimer = 0;
+        }
+    }
+
+    function markClassSearchTutorialCompleted() {
+        clearClassSearchTutorialCompletion();
+        classSearchTutorialCompletedAt = Date.now();
+        classSearchTutorialCompletionTimer = window.setTimeout(() => {
+            classSearchTutorialCompletionTimer = 0;
+            classSearchTutorialCompletedAt = 0;
+            if (featureTutorialStep === CLASS_SEARCH_TUTORIAL_COMPLETE_STEP) {
+                clearFeatureTutorialStep();
+            }
+            queueClassSearchTutorialRefresh();
+        }, 6000);
+    }
+
+    function shouldShowClassSearchTutorialCompletion() {
+        return classSearchTutorialCompletedAt > 0 && (Date.now() - classSearchTutorialCompletedAt) < 6000;
+    }
+
+    function completeClassSearchTutorial() {
+        setFeatureTutorialStep(CLASS_SEARCH_TUTORIAL_COMPLETE_STEP);
+        markClassSearchTutorialCompleted();
+        queueClassSearchTutorialRefresh();
+    }
+
+    function hasVisibleBox(el) {
+        if (!el) return false;
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width >= 2 && rect.height >= 2;
+    }
+
+    function getClassSearchTutorialGuide() {
+        return document.getElementById('thr-class-search-tour-guide');
+    }
+
+    function ensureClassSearchTutorialGuide() {
+        let guide = getClassSearchTutorialGuide();
+        if (guide) return guide;
+
+        guide = document.createElement('div');
+        guide.id = 'thr-class-search-tour-guide';
+        guide.innerHTML = `
+            <div class="thr-tracker-guide__spotlight"></div>
+            <div class="thr-tracker-guide__pulse"></div>
+            <div class="thr-tracker-guide__arrow"></div>
+        `;
+        document.body.appendChild(guide);
+        return guide;
+    }
+
+    function getClassSearchTutorialPanel() {
+        return document.getElementById('thr-class-search-tour-panel');
+    }
+
+    function ensureClassSearchTutorialPanel() {
+        let panel = getClassSearchTutorialPanel();
+        if (panel) return panel;
+
+        panel = document.createElement('div');
+        panel.id = 'thr-class-search-tour-panel';
+        panel.innerHTML = `
+            <div id="thr-class-search-tour-eyebrow" class="thr-tracker-sync-panel__eyebrow">Tutorial</div>
+            <div id="thr-class-search-tour-title" class="thr-tracker-sync-panel__title">Follow the next step</div>
+            <div id="thr-class-search-tour-detail" class="thr-tracker-sync-panel__detail"></div>
+        `;
+        document.body.appendChild(panel);
+        return panel;
+    }
+
+    function removeClassSearchTutorial() {
+        getClassSearchTutorialGuide()?.remove();
+        getClassSearchTutorialPanel()?.remove();
+    }
+
+    function hideClassSearchTutorialTarget() {
+        const guide = getClassSearchTutorialGuide();
+        if (!guide) return;
+        guide.querySelectorAll('.thr-tracker-guide__spotlight, .thr-tracker-guide__pulse, .thr-tracker-guide__arrow')
+            .forEach((el) => {
+                el.style.display = 'none';
+            });
+    }
+
+    function setClassSearchTutorialPanelState({ eyebrow, title, detail = '' }) {
+        const panel = ensureClassSearchTutorialPanel();
+        const eyebrowEl = panel.querySelector('#thr-class-search-tour-eyebrow');
+        const titleEl = panel.querySelector('#thr-class-search-tour-title');
+        const detailEl = panel.querySelector('#thr-class-search-tour-detail');
+        if (eyebrowEl) eyebrowEl.textContent = eyebrow || '';
+        if (titleEl) titleEl.textContent = title || '';
+        if (detailEl) {
+            detailEl.textContent = detail;
+            detailEl.style.display = detail ? '' : 'none';
+        }
+    }
+
+    function positionClassSearchTutorialPanel(target, options = {}) {
+        const panel = ensureClassSearchTutorialPanel();
+        if (!panel) return;
+
+        const preferredMode = typeof options.preferredMode === 'string' ? options.preferredMode : '';
+        const margin = 24;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const panelWidth = Math.min(380, Math.max(260, panel.offsetWidth || 380));
+        const panelHeight = Math.max(140, panel.offsetHeight || 190);
+        const targetRect = target?.getBoundingClientRect?.() || null;
+
+        const expandedTarget = targetRect
+            ? {
+                left: Math.max(0, targetRect.left - 20),
+                top: Math.max(0, targetRect.top - 20),
+                right: Math.min(viewportWidth, targetRect.right + 20),
+                bottom: Math.min(viewportHeight, targetRect.bottom + 20),
+            }
+            : null;
+
+        const candidateByMode = {
+            'top-right': {
+                top: margin,
+                left: Math.max(margin, viewportWidth - panelWidth - margin),
+                mode: 'top-right',
+            },
+            'bottom-right': {
+                top: Math.max(margin, viewportHeight - panelHeight - margin),
+                left: Math.max(margin, viewportWidth - panelWidth - margin),
+                mode: 'bottom-right',
+            },
+            'top-left': {
+                top: margin,
+                left: margin,
+                mode: 'top-left',
+            },
+            'bottom-left': {
+                top: Math.max(margin, viewportHeight - panelHeight - margin),
+                left: margin,
+                mode: 'bottom-left',
+            },
+        };
+        const candidateOrder = preferredMode
+            ? [preferredMode, 'top-left', 'top-right', 'bottom-left', 'bottom-right']
+            : ['top-right', 'bottom-right', 'top-left', 'bottom-left'];
+        const candidates = candidateOrder
+            .map((mode) => candidateByMode[mode])
+            .filter((candidate, index, list) => candidate && list.findIndex((entry) => entry.mode === candidate.mode) === index);
+
+        const overlapsTarget = (candidate) => {
+            if (!expandedTarget) return false;
+            const candidateRight = candidate.left + panelWidth;
+            const candidateBottom = candidate.top + panelHeight;
+            return !(
+                candidateRight < expandedTarget.left ||
+                candidate.left > expandedTarget.right ||
+                candidateBottom < expandedTarget.top ||
+                candidate.top > expandedTarget.bottom
+            );
+        };
+
+        let chosen = candidates.find((candidate) => !overlapsTarget(candidate)) || candidates[0];
+
+        if (expandedTarget) {
+            chosen = candidates
+                .map((candidate) => {
+                    const centerX = candidate.left + (panelWidth / 2);
+                    const centerY = candidate.top + (panelHeight / 2);
+                    const targetCenterX = (expandedTarget.left + expandedTarget.right) / 2;
+                    const targetCenterY = (expandedTarget.top + expandedTarget.bottom) / 2;
+                    const distance = Math.hypot(centerX - targetCenterX, centerY - targetCenterY);
+                    return {
+                        ...candidate,
+                        overlaps: overlapsTarget(candidate),
+                        distance,
+                    };
+                })
+                .sort((a, b) => {
+                    if (a.overlaps !== b.overlaps) return a.overlaps ? 1 : -1;
+                    return b.distance - a.distance;
+                })[0] || chosen;
+        }
+
+        panel.dataset.thrPanelMode = chosen.mode;
+        panel.style.top = `${chosen.top}px`;
+        panel.style.left = `${chosen.left}px`;
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+    }
+
+    function positionClassSearchTutorialTarget(target) {
+        const guide = ensureClassSearchTutorialGuide();
+        if (!guide || !hasVisibleBox(target)) {
+            hideClassSearchTutorialTarget();
+            return;
+        }
+
+        const rect = target.getBoundingClientRect();
+        const spotlight = guide.querySelector('.thr-tracker-guide__spotlight');
+        const pulse = guide.querySelector('.thr-tracker-guide__pulse');
+        const arrow = guide.querySelector('.thr-tracker-guide__arrow');
+        const pad = 10;
+        const top = Math.max(8, rect.top - pad);
+        const left = Math.max(8, rect.left - pad);
+        const width = Math.min(window.innerWidth - left - 8, rect.width + (pad * 2));
+        const height = Math.min(window.innerHeight - top - 8, rect.height + (pad * 2));
+        const arrowAbove = rect.top > 150;
+        const arrowLeft = Math.max(10, Math.min(window.innerWidth - 48, rect.left + (rect.width / 2) - 14));
+
+        spotlight.style.display = 'block';
+        spotlight.style.top = `${top}px`;
+        spotlight.style.left = `${left}px`;
+        spotlight.style.width = `${width}px`;
+        spotlight.style.height = `${height}px`;
+
+        pulse.style.display = 'block';
+        pulse.style.top = `${Math.max(4, top - 6)}px`;
+        pulse.style.left = `${Math.max(4, left - 6)}px`;
+        pulse.style.width = `${Math.min(window.innerWidth - left, width + 12)}px`;
+        pulse.style.height = `${Math.min(window.innerHeight - top, height + 12)}px`;
+
+        arrow.style.display = 'block';
+        arrow.textContent = arrowAbove ? '↓' : '↑';
+        arrow.style.left = `${arrowLeft}px`;
+        arrow.style.top = arrowAbove ? `${Math.max(10, rect.top - 54)}px` : `${Math.min(window.innerHeight - 54, rect.bottom + 10)}px`;
+    }
+
+    function bindClassSearchTutorialTarget(target, step, nextStep) {
+        if (!target || !step) return;
+        const boundKey = `${step}->${nextStep || 'done'}`;
+        if (target.dataset.thrClassSearchTutorialBound === boundKey) return;
+
+        target.dataset.thrClassSearchTutorialBound = boundKey;
+        const advance = () => {
+            if (featureTutorialStep !== step) return;
+            if (nextStep) setFeatureTutorialStep(nextStep);
+            else {
+                completeClassSearchTutorial();
+            }
+            queueClassSearchTutorialRefresh();
+        };
+
+        target.addEventListener('click', advance);
+        target.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                advance();
+            }
+        });
+    }
+
+    function getTrackerSidebarToggleTarget() {
+        const toggle = document.querySelector('#thr-tracker-container .thr-tracker-toggle');
+        return hasVisibleBox(toggle) ? toggle : null;
+    }
+
+    function getActionableTrackerTargets() {
+        const sidebar = document.getElementById('thr-tracker-sidebar');
+        if (!sidebar) return [];
+
+        const directCards = [...sidebar.querySelectorAll('.thr-tracker-card[data-thr-action-mode="direct-search"]')]
+            .filter((el) => hasVisibleBox(el));
+        if (directCards.length) return directCards;
+
+        return [...sidebar.querySelectorAll('.thr-subcourse-btn[data-thr-action-control="1"], .thr-requirement-option-btn[data-thr-action-control="1"]')]
+            .filter((el) => hasVisibleBox(el));
+    }
+
+    function getFirstActionableTrackerTarget() {
+        return getActionableTrackerTargets()[0] || null;
+    }
+
+    function getActionableTargetLabel(target) {
+        if (!target) return 'a synced search action';
+        if (target.matches('.thr-tracker-card')) {
+            return target.querySelector('.thr-tracker-card-title')?.textContent?.trim() || 'a synced requirement';
+        }
+
+        return target.textContent?.trim()
+            || target.getAttribute('data-course')
+            || target.getAttribute('data-search-title')
+            || 'a synced search action';
+    }
+
+    function refreshClassSearchTutorial() {
+        if (!isClassSearchPage()) {
+            clearClassSearchTutorialCompletion();
+            removeClassSearchTutorial();
+            return;
+        }
+
+        if (featureTutorialStep === CLASS_SEARCH_TUTORIAL_COMPLETE_STEP || shouldShowClassSearchTutorialCompletion()) {
+                const sidebar = document.getElementById('thr-tracker-sidebar');
+                setClassSearchTutorialPanelState({
+                    eyebrow: 'Tutorial Complete',
+                    title: "That's it!",
+                    detail: 'Your Tar Heel Tracker requirements are ready. Any active item in this sidebar can kick off another Class Search.',
+                });
+                positionClassSearchTutorialPanel(sidebar, { preferredMode: 'top-left' });
+                hideClassSearchTutorialTarget();
+                return;
+        }
+
+        if (!featureTutorialStep || ![CLASS_SEARCH_TUTORIAL_TOGGLE_STEP, CLASS_SEARCH_TUTORIAL_ACTION_STEP].includes(featureTutorialStep)) {
+            removeClassSearchTutorial();
+            return;
+        }
+
+        const container = document.getElementById('thr-tracker-container');
+        if (featureTutorialStep === CLASS_SEARCH_TUTORIAL_TOGGLE_STEP) {
+            const toggle = getTrackerSidebarToggleTarget();
+            if (container?.classList.contains('thr-open')) {
+                setFeatureTutorialStep(CLASS_SEARCH_TUTORIAL_ACTION_STEP);
+                queueClassSearchTutorialRefresh();
+                return;
+            }
+
+            setClassSearchTutorialPanelState({
+                eyebrow: 'Tutorial • Step 8 of 9',
+                title: toggle ? 'Click Tracker icon' : 'Wait for Tracker',
+                detail: 'Open the Tar Heel Tracker drawer from Class Search.',
+            });
+            positionClassSearchTutorialPanel(toggle, { preferredMode: 'top-left' });
+            bindClassSearchTutorialTarget(toggle, CLASS_SEARCH_TUTORIAL_TOGGLE_STEP, CLASS_SEARCH_TUTORIAL_ACTION_STEP);
+            if (toggle) positionClassSearchTutorialTarget(toggle);
+            else hideClassSearchTutorialTarget();
+            return;
+        }
+
+        if (featureTutorialStep === CLASS_SEARCH_TUTORIAL_ACTION_STEP) {
+            if (container && !container.classList.contains('thr-open')) {
+                setFeatureTutorialStep(CLASS_SEARCH_TUTORIAL_TOGGLE_STEP);
+                queueClassSearchTutorialRefresh();
+                return;
+            }
+
+            const targets = getActionableTrackerTargets();
+            const target = targets[0] || null;
+            const sidebar = document.getElementById('thr-tracker-sidebar');
+            setClassSearchTutorialPanelState({
+                eyebrow: 'Tutorial • Step 9 of 9',
+                title: target ? 'Choose any active tracker requirement' : 'Wait for a searchable requirement',
+                detail: target
+                    ? 'The whole Tar Heel Tracker sidebar is highlighted because any non-grey item here can run a real Class Search action right away.'
+                    : 'Only requirements with a real Class Search action stay active.',
+            });
+            positionClassSearchTutorialPanel(sidebar || target, { preferredMode: 'top-left' });
+            targets.forEach((actionTarget) => {
+                bindClassSearchTutorialTarget(actionTarget, CLASS_SEARCH_TUTORIAL_ACTION_STEP, '');
+            });
+            if (sidebar) positionClassSearchTutorialTarget(sidebar);
+            else if (target) positionClassSearchTutorialTarget(target);
+            else hideClassSearchTutorialTarget();
+            return;
+        }
+    }
+
+    function queueClassSearchTutorialRefresh() {
+        if (classSearchTutorialRefreshFrame) return;
+        classSearchTutorialRefreshFrame = window.requestAnimationFrame(() => {
+            classSearchTutorialRefreshFrame = 0;
+            refreshClassSearchTutorial();
+        });
+    }
+
+    addSafeStorageChangeListener((changes, namespace) => {
+        if (namespace !== 'local') return;
+        if (changes[FEATURE_TUTORIAL_STORAGE_KEY]) {
+            featureTutorialStep = changes[FEATURE_TUTORIAL_STORAGE_KEY].newValue || '';
+            queueClassSearchTutorialRefresh();
+        }
+
+        if (!changes.thr_missing_requirements && !changes.thr_tracker_context && !changes.thr_tracker_status && !changes.thr_tracker_error) return;
+        if (!isClassSearchPage()) return;
+
+        const existing = document.getElementById('thr-tracker-container');
+        if (existing) {
+            existing.remove();
+        }
+        injectTrackerSidebar();
+    });
+
     /* ── Bootstrap ── */
 
     function init() {
@@ -900,6 +3154,14 @@
         fixSidebarIcons();
         wireBusyButtons();
         
+        if (isSearch) {
+            wireClassSearchPreferencePersistence();
+            ensureFeatureTutorialStepLoaded(() => {
+                queueClassSearchTutorialRefresh();
+            });
+            injectTrackerSidebar();
+        }
+
         if (isCart) {
             injectToggle();
             styleListColumns();
@@ -920,6 +3182,14 @@
         fixSidebarIcons();
         wireBusyButtons();
         
+        if (isSearch) {
+            wireClassSearchPreferencePersistence();
+            ensureFeatureTutorialStepLoaded(() => {
+                queueClassSearchTutorialRefresh();
+            });
+            injectTrackerSidebar();
+        }
+
         if (isCart) {
             injectToggle();
             styleListColumns();
