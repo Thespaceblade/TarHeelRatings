@@ -6,9 +6,13 @@
 
     const VIEW_STORAGE_KEY = 'thrShoppingCartView';
     const FEATURE_TUTORIAL_STORAGE_KEY = 'thr_feature_tutorial_step';
+    const FEATURE_TUTORIAL_CLOSED_STORAGE_KEY = 'thr_feature_tutorial_closed';
     const CLASS_SEARCH_TUTORIAL_TOGGLE_STEP = 'class_search_tracker_toggle';
     const CLASS_SEARCH_TUTORIAL_ACTION_STEP = 'class_search_requirement_action';
     const CLASS_SEARCH_TUTORIAL_COMPLETE_STEP = 'class_search_tutorial_complete';
+    const CLASS_SEARCH_TRACKER_CONTAINER_ID = 'thr-tracker-container';
+    const CLASS_SEARCH_TRACKER_SIDEBAR_ID = 'thr-tracker-sidebar';
+    const CLASS_SEARCH_TRACKER_LAUNCHER_ID = 'thr-class-search-launcher';
 
     function loadViewPreference() {
         try { return localStorage.getItem(VIEW_STORAGE_KEY) || 'list'; }
@@ -23,9 +27,18 @@
     let currentView = loadViewPreference();
     let featureTutorialStep = '';
     let featureTutorialStepLoaded = false;
+    let featureTutorialClosed = false;
     let classSearchTutorialRefreshFrame = 0;
     let classSearchTutorialCompletedAt = 0;
-    let classSearchTutorialCompletionTimer = 0;
+    let classSearchTrackerOpen = false;
+    let classSearchTrackerPeek = false;
+    let classSearchTrackerBusy = false;
+    let classSearchTrackerMeta = {
+        status: '',
+        count: 0,
+    };
+    let classSearchTrackerPeekTimer = 0;
+    let classSearchTrackerBindingsReady = false;
 
     /* ── SVG icon strings ── */
     const S = 'stroke-linecap="round" stroke-linejoin="round"';
@@ -40,20 +53,20 @@
 
     /* ── Subject-category SVG icons ── */
     const SUBJECT_SVG = {
-        code:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
-        flask:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M9 3h6"/><path d="M10 3v7L4 18c-.7 1.1.2 3 1.7 3h12.6c1.5 0 2.4-1.9 1.7-3L14 10V3"/></svg>`,
-        hash:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>`,
-        book:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>`,
-        trending:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
-        users:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`,
-        globe:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>`,
-        music:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
-        heart:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`,
-        feather:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>`,
-        layers:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
-        leaf:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M11 20A7 7 0 019.8 6.9C15.5 4.9 17 3.5 17 3.5s4.5 2.4 4.5 8.5A7 7 0 0111 20z"/><path d="M2 21c0-3 1.9-5.1 4-6.5"/></svg>`,
-        cap:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><line x1="22" y1="10" x2="22" y2="16"/></svg>`,
-        file:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+        code: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+        flask: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M9 3h6"/><path d="M10 3v7L4 18c-.7 1.1.2 3 1.7 3h12.6c1.5 0 2.4-1.9 1.7-3L14 10V3"/></svg>`,
+        hash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>`,
+        book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>`,
+        trending: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+        users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`,
+        globe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>`,
+        music: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+        heart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`,
+        feather: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>`,
+        layers: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
+        leaf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M11 20A7 7 0 019.8 6.9C15.5 4.9 17 3.5 17 3.5s4.5 2.4 4.5 8.5A7 7 0 0111 20z"/><path d="M2 21c0-3 1.9-5.1 4-6.5"/></svg>`,
+        cap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><line x1="22" y1="10" x2="22" y2="16"/></svg>`,
+        file: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${S}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
     };
 
     /* ── Subject → icon category mapping ── */
@@ -85,6 +98,24 @@
         MASC: 'leaf', ECOL: 'leaf',
         EDUC: 'cap', INTS: 'cap',
         BMME: 'code',
+    };
+
+    const SUBJECT_AUTOCOMPLETE_LABEL_ALIASES = {
+        AAAD: ['African, African American, and Diaspora Studies', 'African African American and Diaspora Studies'],
+        AMES: ['Asian and Middle Eastern Studies'],
+        ARTH: ['Art History'],
+        BIOC: ['Biochemistry'],
+        BIOS: ['Biostatistics'],
+        CLAR: ['Classical Archaeology'],
+        CLSC: ['Classics'],
+        EXSS: ['Exercise and Sport Science'],
+        GLBL: ['Global Studies'],
+        GSLL: ['Germanic and Slavic Languages and Literatures'],
+        JWST: ['Jewish Studies'],
+        PWAD: ['Peace, War, and Defense'],
+        SCLL: ['Second Language Acquisition and Linguistics'],
+        STOR: ['Stats and Operations Research', 'Statistics and Operations Research'],
+        WGST: ['Women and Gender Studies'],
     };
 
     function getSubjectIcon(classCode) {
@@ -229,7 +260,7 @@
         if (!grid) return;
 
         const searchInput = document.querySelector('input#search') ||
-                            document.querySelector('input[placeholder*="earch"]');
+            document.querySelector('input[placeholder*="earch"]');
         const toolbar = searchInput
             ? searchInput.closest('[class*="Grid"], [class*="Toolbar"], [class*="toolbar"]')
             : null;
@@ -383,7 +414,7 @@
         }
 
         const origSpan = instructorCell.querySelector('span[title]')
-                      || instructorCell.querySelector('span');
+            || instructorCell.querySelector('span');
         const rawName = origSpan
             ? (origSpan.getAttribute('title') || origSpan.textContent).trim()
             : '';
@@ -457,7 +488,7 @@
                 /color\s*:\s*(red|#[ef]00|#dc|#f44)/i.test(html)) {
                 level = 'error';
             } else if (/warning|wait\s*list|permission|consent|reserve/i.test(text) ||
-                       /color\s*:\s*(orange|#f[a-f]9|#d97|yellow)/i.test(html)) {
+                /color\s*:\s*(orange|#f[a-f]9|#d97|yellow)/i.test(html)) {
                 level = 'warning';
             }
             addMsg(text, level);
@@ -554,8 +585,8 @@
         const result = { info: [], details: [] };
         // The expanded detail sits in a sibling row or a child container
         // Look for grid containers with INFORMATION / DETAILS headers
-        const grid = document.querySelector('[aria-label="Enrollment_Classes"]') || 
-                     document.querySelector('.cx-MuiTable-root, [role="grid"]');
+        const grid = document.querySelector('[aria-label="Enrollment_Classes"]') ||
+            document.querySelector('.cx-MuiTable-root, [role="grid"]');
         // We do not strict return here because detailRow is relative to `row`
 
         // Find the detail row — it's usually the next sibling row after the data row
@@ -585,7 +616,7 @@
                 if (dd && dd.tagName.toLowerCase() === 'dd') {
                     const label = dt.textContent.replace(/:$/, '').trim();
                     const value = dd.innerText ? dd.innerText.trim() : dd.textContent.trim();
-                    
+
                     if (label && value) {
                         // Categorize into info (left) or details (right)
                         if (/Instructor|Dates|Meets|Instruction Mode|Room|Campus|Location|Components/i.test(label)) {
@@ -596,7 +627,7 @@
                     }
                 }
             });
-        } 
+        }
         // 2. Fallback to generic Grid-container divs if dt/dd aren't used
         else {
             const rows = detailRow.querySelectorAll('[class*="MuiGrid-container"], [class*="Grid-container"], tr');
@@ -608,11 +639,11 @@
                         // Use innerText to preserve pre-line newlines from CC
                         const valEl = children[1];
                         const value = (valEl.innerText ? valEl.innerText : valEl.textContent)?.trim();
-                        
+
                         if (label && value && label !== value) {
                             if (/DETAILS/i.test(label)) { currentSection = 'details'; return; }
                             if (/INFORMATION/i.test(label)) { currentSection = 'info'; return; }
-                            
+
                             if (/Instructor|Dates|Meets|Instruction Mode|Room|Campus|Location|Components/i.test(label)) {
                                 result.details.push({ label, value });
                             } else {
@@ -753,7 +784,7 @@
                     const kebabBtn = document.createElement('button');
                     kebabBtn.className = 'thr-card-kebab-btn';
                     kebabBtn.innerHTML = ICON.kebab;
-                    
+
                     const menu = document.createElement('div');
                     menu.className = 'thr-card-kebab-menu';
                     actions.slice(1).forEach(a => {
@@ -794,18 +825,18 @@
                 const label = document.createElement('label');
                 label.className = 'thr-card-select-label';
                 cb = origCb.cloneNode(true);
-                
+
                 // Force sync initial state from original DOM element
                 const isInitiallyChecked = origCb.checked || origCb.hasAttribute('checked');
                 cb.checked = isInitiallyChecked;
-                
+
                 cb.addEventListener('change', () => {
                     origCb.checked = cb.checked;
                     origCb.dispatchEvent(new Event('change', { bubbles: true }));
                     origCb.click();
                     updateSelection(cb.checked);
                 });
-                
+
                 updateSelection(isInitiallyChecked);
                 label.appendChild(cb);
                 label.appendChild(document.createTextNode(' Select'));
@@ -916,7 +947,7 @@
                 icon.style.alignItems = 'center';
                 icon.style.justifyContent = 'center';
                 icon.dataset.thrFixed = '1';
-                
+
                 // Adjust parent if needed
                 const wrapper = icon.parentElement;
                 if (wrapper) wrapper.style.overflow = 'visible';
@@ -952,7 +983,6 @@
         'Lifetime Fitness': ['Lifetime Fitness'],
         'Global Language Level 3': ['Global Language', 'Global Language Level 3', 'Global Language through level 3'],
         'Global Language through level 3': ['Global Language', 'Global Language through level 3', 'Global Language Level 3'],
-        'Campus Life Experience': ['Campus Life Experience'],
         'Data Literacy': ['Data Literacy'],
         'Interdisciplinary': ['Interdisciplinary'],
         'Writing at the Research University': ['Writing at the Research Univ', 'Writing at the Research University'],
@@ -1007,12 +1037,12 @@
 
     const AUTOCOMPLETE_RETRY_CONFIG = {
         attempts: 3,
-        betweenAttemptsMs: 300,
-        confirmTimeoutMs: 1800,
+        betweenAttemptsMs: 150,
+        confirmTimeoutMs: 700,
         inputTimeoutMs: 7000,
         interactiveTimeoutMs: 3000,
-        optionTimeoutMs: 3000,
-        settleMs: 250,
+        optionTimeoutMs: 1200,
+        settleMs: 90,
     };
 
     const REQUIREMENT_LOOKUP_STOP_WORDS = new Set([
@@ -1090,11 +1120,31 @@
         }
     }
 
+    function safeRuntimeGetUrl(path) {
+        if (!chrome?.runtime?.getURL) return path;
+
+        try {
+            return chrome.runtime.getURL(path);
+        } catch (_) {
+            return path;
+        }
+    }
+
     function getStaticSubCourses(title) {
         for (const [key, courses] of Object.entries(SPECIFIC_COURSES_MAP)) {
             if (title.includes(key) || key.includes(title)) return courses;
         }
         return null;
+    }
+
+    function extractStandaloneCourseSearch(title) {
+        const cleanTitle = String(title || '').trim();
+        const match = cleanTitle.match(/^([A-Z]{2,5})\s+(\d{1,4}[A-Z]?)$/);
+        if (!match) return null;
+        return {
+            subject: match[1].toUpperCase(),
+            catalog: match[2].toUpperCase(),
+        };
     }
 
     function getRequirementChoiceConfig(title) {
@@ -1128,6 +1178,107 @@
             .toLowerCase()
             .replace(/\s+/g, ' ')
             .trim();
+    }
+
+    function tokenizeSearchText(text) {
+        return normalizeSearchText(text)
+            .replace(/[^a-z0-9]+/g, ' ')
+            .split(' ')
+            .map((token) => token.trim())
+            .filter(Boolean);
+    }
+
+    function removeSearchStopwords(tokens) {
+        const stopwords = new Set(['and', 'of', 'the', 'for', 'in', 'to']);
+        return (Array.isArray(tokens) ? tokens : []).filter((token) => token && !stopwords.has(token));
+    }
+
+    function getLeadingConsonants(token, maxLength = 2) {
+        const letters = String(token || '').toLowerCase().replace(/[^a-z]/g, '');
+        if (!letters) return '';
+
+        let consonants = '';
+        for (const char of letters) {
+            if (!'aeiou'.includes(char)) {
+                consonants += char;
+            }
+            if (consonants.length >= maxLength) {
+                return consonants.slice(0, maxLength);
+            }
+        }
+
+        return letters.slice(0, maxLength);
+    }
+
+    function buildShortCodeCandidatesFromOption(text) {
+        const normalized = normalizeSearchText(text);
+        const tokens = removeSearchStopwords(tokenizeSearchText(normalized));
+        if (!tokens.length) return [];
+
+        const signatures = new Set();
+        const initials = tokens.map((token) => token[0]).join('');
+        if (initials) signatures.add(initials);
+        if (tokens.length > 1) {
+            signatures.add(tokens.slice(0, -1).map((token) => token[0]).join(''));
+        }
+        if (tokens[tokens.length - 1] === 'studies') {
+            signatures.add(`${tokens.slice(0, -1).map((token) => token[0]).join('')}st`);
+            if (tokens.length === 2) {
+                signatures.add(`${tokens[0].slice(0, 1)}${getLeadingConsonants(tokens[0], 2).slice(1)}st`);
+            }
+        }
+
+        if (tokens.length >= 2) {
+            signatures.add(`${tokens[0].slice(0, 2)}${tokens.slice(1).map((token) => token[0]).join('')}`);
+            signatures.add(`${getLeadingConsonants(tokens[0], 2)}${tokens.slice(1).map((token) => token[0]).join('')}`);
+            signatures.add(tokens.map((token) => getLeadingConsonants(token, 2)).join(''));
+        } else {
+            signatures.add(tokens[0].slice(0, 4));
+            signatures.add(getLeadingConsonants(tokens[0], 4));
+        }
+
+        return [...signatures].map((value) => normalizeSearchText(value)).filter(Boolean);
+    }
+
+    function isShortCodeSearchText(text) {
+        return /^[a-z]{2,5}$/.test(normalizeSearchText(text));
+    }
+
+    function buildSubjectAutocompleteCandidates(subjectCode) {
+        const normalizedCode = String(subjectCode || '').trim().toUpperCase();
+        if (!normalizedCode) return [];
+
+        const aliases = SUBJECT_AUTOCOMPLETE_LABEL_ALIASES[normalizedCode] || [];
+        return dedupeStrings([normalizedCode, ...aliases]);
+    }
+
+    function getVisibleAutocompleteOptionTexts() {
+        return Array.from(document.querySelectorAll('[role="option"]'))
+            .map((option) => String(option.textContent || '').replace(/\s+/g, ' ').trim())
+            .filter(Boolean);
+    }
+
+    function fieldTextMatchesCandidate(text, candidate) {
+        const normalizedText = normalizeSearchText(text);
+        const normalizedCandidate = normalizeSearchText(candidate);
+        if (!normalizedText || !normalizedCandidate) return false;
+        if (normalizedText === normalizedCandidate) return true;
+        if (!isShortCodeSearchText(normalizedCandidate) && normalizedText.includes(normalizedCandidate)) return true;
+
+        const textTokens = tokenizeSearchText(normalizedText);
+        const candidateTokens = tokenizeSearchText(normalizedCandidate);
+        if (candidateTokens.length === 1) {
+            const candidateToken = candidateTokens[0];
+            if (textTokens.some((token) => token === candidateToken || token.startsWith(candidateToken))) {
+                return true;
+            }
+        }
+
+        if (!isShortCodeSearchText(normalizedCandidate) && normalizedCandidate.includes(normalizedText) && normalizedText.length >= 6) {
+            return true;
+        }
+
+        return false;
     }
 
     function normalizeFieldLabelText(text) {
@@ -1346,6 +1497,16 @@
             .filter((token) => token && token.length > 1 && !REQUIREMENT_LOOKUP_STOP_WORDS.has(token));
     }
 
+    function extractSubjectFromCourseCode(code) {
+        const match = String(code || '').trim().match(/^([A-Z]{2,5})\s+\d/i);
+        return match ? match[1].toUpperCase() : '';
+    }
+
+    function extractCourseNumberValue(code) {
+        const match = String(code || '').trim().match(/^[A-Z]{2,5}\s+(\d{1,4})/i);
+        return match ? Number(match[1]) : NaN;
+    }
+
     function dedupeStrings(values) {
         return [...new Set((Array.isArray(values) ? values : []).map((value) => String(value || '').trim()).filter(Boolean))];
     }
@@ -1354,6 +1515,12 @@
         return normalizeSearchText(String(text || ''))
             .replace(/[–—-]/g, ' ')
             .replace(/[^\w\s]/g, ' ')
+            .replace(/\bb\s*s\b/g, 'bs')
+            .replace(/\bb\s*a\b/g, 'ba')
+            .replace(/\bb\s*f\s*a\b/g, 'bfa')
+            .replace(/\bb\s*s\s*p\s*h\b/g, 'bsph')
+            .replace(/\bb\s*a\s*e\s*d\b/g, 'baed')
+            .replace(/\bb\s*m\s*u\s*s\b/g, 'bmus')
             .replace(/\s+/g, ' ')
             .trim();
     }
@@ -1671,7 +1838,11 @@
             '<div class="thr-tracker-card-actions-grid">';
 
         config.options.forEach((option) => {
-            html += '<button class="thr-requirement-option-btn" data-thr-action-control="1" data-search-title="' + escapeHtml(option.searchTitle) + '">' + escapeHtml(option.label) + '</button>';
+            const searchTitleAttr = option.searchTitle ? ' data-search-title="' + escapeHtml(option.searchTitle) + '"' : '';
+            const searchModeAttr = option.searchMode ? ' data-search-mode="' + escapeHtml(option.searchMode) + '"' : '';
+            const searchSubjectAttr = option.searchSubject ? ' data-search-subject="' + escapeHtml(option.searchSubject) + '"' : '';
+            const searchSummaryAttr = option.searchSummary ? ' data-search-summary="' + escapeHtml(option.searchSummary) + '"' : '';
+            html += '<button class="thr-requirement-option-btn" data-thr-action-control="1"' + searchTitleAttr + searchModeAttr + searchSubjectAttr + searchSummaryAttr + '>' + escapeHtml(option.label) + '</button>';
         });
 
         html += '</div></div>';
@@ -1717,13 +1888,24 @@
         const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
         if (nativeSetter) nativeSetter.call(input, text);
         else input.value = text;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
+        try {
+            input.dispatchEvent(new InputEvent('input', {
+                bubbles: true,
+                data: String(text || ''),
+                inputType: 'insertText',
+            }));
+        } catch (_) {
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
         return true;
     }
 
     function triggerElementClick(el) {
         if (!el) return;
+        if (typeof el.click === 'function') {
+            el.click();
+            return;
+        }
         ['pointerdown', 'mousedown', 'mouseup', 'click'].forEach(type => {
             el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
         });
@@ -1735,15 +1917,235 @@
         input.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
     }
 
+    function clickAutocompleteOption(option) {
+        if (!option) return false;
+        ['pointerdown', 'mousedown', 'mouseup'].forEach((type) => {
+            option.dispatchEvent(new MouseEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+            }));
+        });
+        if (typeof option.click === 'function') {
+            option.click();
+            return true;
+        }
+        option.dispatchEvent(new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+        }));
+        return true;
+    }
+
+    function getTrackerContainer() {
+        return document.getElementById(CLASS_SEARCH_TRACKER_CONTAINER_ID);
+    }
+
+    function getTrackerSidebar() {
+        return document.getElementById(CLASS_SEARCH_TRACKER_SIDEBAR_ID);
+    }
+
+    function getClassSearchTrackerLauncher() {
+        return document.getElementById(CLASS_SEARCH_TRACKER_LAUNCHER_ID);
+    }
+
+    function getTrackerEdgeHandle() {
+        return document.querySelector(`#${CLASS_SEARCH_TRACKER_CONTAINER_ID} .thr-tracker-edge-handle`);
+    }
+
+    function findPreferencesMenuButton() {
+        return [...document.querySelectorAll('button, [role="button"]')].find((el) => {
+            if (!el || !el.isConnected) return false;
+            const rect = el.getBoundingClientRect();
+            if (rect.width < 2 || rect.height < 2) return false;
+            const label = (el.getAttribute('aria-label') || el.getAttribute('title') || el.innerText || el.textContent || '').trim();
+            return /^Preferences Menu$/i.test(label);
+        }) || null;
+    }
+
+    function buildClassSearchTrackerLauncherLabel() {
+        const status = classSearchTrackerMeta.status || '';
+        const count = Number(classSearchTrackerMeta.count || 0);
+
+        if (classSearchTrackerBusy || status === 'parsing') {
+            return 'Open TarHeel Tracker sidebar. A Class Search task is running.';
+        }
+        if (status === 'error') {
+            return 'Open TarHeel Tracker sidebar. Tracker sync needs attention.';
+        }
+        if (status === 'all_satisfied') {
+            return 'Open TarHeel Tracker sidebar. All tracked requirements are satisfied.';
+        }
+        if (status === 'parsed' && count > 0) {
+            return `Open TarHeel Tracker sidebar. ${count} synced requirement${count === 1 ? '' : 's'} available.`;
+        }
+        return 'Open TarHeel Tracker sidebar.';
+    }
+
+    function clearClassSearchTrackerPeekTimer() {
+        if (!classSearchTrackerPeekTimer) return;
+        window.clearTimeout(classSearchTrackerPeekTimer);
+        classSearchTrackerPeekTimer = 0;
+    }
+
+    function syncClassSearchTrackerChrome() {
+        const container = getTrackerContainer();
+        const launcher = getClassSearchTrackerLauncher();
+        const handle = getTrackerEdgeHandle();
+        const status = classSearchTrackerMeta.status || '';
+        const busy = classSearchTrackerBusy;
+
+        if (container) {
+            container.classList.toggle('thr-open', classSearchTrackerOpen);
+            container.classList.toggle('thr-peek', !classSearchTrackerOpen && classSearchTrackerPeek);
+            container.dataset.busy = busy ? 'true' : 'false';
+            container.dataset.status = status;
+        }
+
+        [launcher, handle].forEach((control) => {
+            if (!control) return;
+            control.dataset.busy = busy ? 'true' : 'false';
+            control.dataset.status = status;
+            control.classList.toggle('is-open', classSearchTrackerOpen);
+            control.setAttribute('aria-busy', busy ? 'true' : 'false');
+            control.setAttribute('aria-expanded', classSearchTrackerOpen ? 'true' : 'false');
+        });
+
+        if (launcher) {
+            const label = buildClassSearchTrackerLauncherLabel();
+            launcher.setAttribute('aria-label', label);
+            launcher.title = label;
+        }
+    }
+
+    function setClassSearchTrackerPeek(peek) {
+        clearClassSearchTrackerPeekTimer();
+        const nextPeek = !classSearchTrackerOpen && !!peek;
+        if (classSearchTrackerPeek === nextPeek) return;
+        classSearchTrackerPeek = nextPeek;
+        syncClassSearchTrackerChrome();
+    }
+
+    function queueClassSearchTrackerPeekHide(delayMs = 140) {
+        clearClassSearchTrackerPeekTimer();
+        classSearchTrackerPeekTimer = window.setTimeout(() => {
+            classSearchTrackerPeekTimer = 0;
+            if (!classSearchTrackerOpen) {
+                classSearchTrackerPeek = false;
+                syncClassSearchTrackerChrome();
+            }
+        }, delayMs);
+    }
+
+    function setClassSearchTrackerOpen(open) {
+        clearClassSearchTrackerPeekTimer();
+        classSearchTrackerOpen = !!open;
+        if (classSearchTrackerOpen) {
+            classSearchTrackerPeek = false;
+        }
+        syncClassSearchTrackerChrome();
+        queueClassSearchTutorialRefresh();
+    }
+
+    function toggleClassSearchTrackerOpen() {
+        setClassSearchTrackerOpen(!classSearchTrackerOpen);
+    }
+
+    function removeClassSearchHeaderLauncher() {
+        getClassSearchTrackerLauncher()?.remove();
+    }
+
+    function ensureClassSearchHeaderLauncher() {
+        if (!isClassSearchPage()) {
+            removeClassSearchHeaderLauncher();
+            return null;
+        }
+
+        const preferencesButton = findPreferencesMenuButton();
+        const mount = preferencesButton?.parentElement || null;
+        if (!preferencesButton || !mount) {
+            removeClassSearchHeaderLauncher();
+            return null;
+        }
+
+        mount.classList.add('thr-class-search-header-actions');
+
+        let launcher = getClassSearchTrackerLauncher();
+        if (!launcher) {
+            launcher = document.createElement('button');
+            launcher.id = CLASS_SEARCH_TRACKER_LAUNCHER_ID;
+            launcher.className = 'thr-class-search-launcher';
+            launcher.type = 'button';
+            launcher.innerHTML = `
+                <img class="thr-class-search-launcher__icon" src="${safeRuntimeGetUrl('icons/logo128px.png')}" alt="">
+            `;
+            launcher.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleClassSearchTrackerOpen();
+            });
+        }
+
+        if (launcher.parentElement !== mount || launcher.nextElementSibling !== preferencesButton) {
+            mount.insertBefore(launcher, preferencesButton);
+        }
+
+        syncClassSearchTrackerChrome();
+        return launcher;
+    }
+
+    function ensureClassSearchTrackerBindings() {
+        if (classSearchTrackerBindingsReady) return;
+        classSearchTrackerBindingsReady = true;
+
+        document.addEventListener('mousemove', (event) => {
+            if (!isClassSearchPage() || classSearchTrackerOpen) return;
+            const launcher = getClassSearchTrackerLauncher();
+            const container = getTrackerContainer();
+            const nearRightEdge = event.clientX >= (window.innerWidth - 18);
+
+            if (nearRightEdge) {
+                setClassSearchTrackerPeek(true);
+                return;
+            }
+
+            if (launcher?.matches(':hover') || container?.matches(':hover')) {
+                setClassSearchTrackerPeek(true);
+                return;
+            }
+
+            queueClassSearchTrackerPeekHide(80);
+        });
+
+        document.addEventListener('mouseleave', () => {
+            if (!classSearchTrackerOpen) {
+                setClassSearchTrackerPeek(false);
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!isClassSearchPage() || !classSearchTrackerOpen) return;
+            const container = getTrackerContainer();
+            const launcher = getClassSearchTrackerLauncher();
+            if (container?.contains(event.target) || launcher?.contains(event.target)) return;
+            setClassSearchTrackerOpen(false);
+        });
+
+        window.addEventListener('resize', () => {
+            if (!classSearchTrackerOpen) {
+                setClassSearchTrackerPeek(false);
+            }
+        });
+    }
+
     function getTrackerSearchStatusEl() {
         return document.getElementById('thr-tracker-search-status');
     }
 
     function setTrackerToggleBusyState(isBusy) {
-        const toggle = document.querySelector('.thr-tracker-toggle');
-        if (!toggle) return;
-        toggle.dataset.busy = isBusy ? 'true' : 'false';
-        toggle.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+        classSearchTrackerBusy = !!isBusy;
+        syncClassSearchTrackerChrome();
     }
 
     function setTrackerSearchStatus(message, tone, sticky) {
@@ -1850,8 +2252,7 @@
     /** Type into an MUI Autocomplete input using React's native value setter */
     function typeIntoMUI(input, text) {
         if (!input) return false;
-        triggerElementClick(input);
-        input.focus();
+        input.focus?.();
         return setNativeInputValue(input, text);
     }
 
@@ -1859,17 +2260,47 @@
     async function waitAndClickOption(matchText, timeoutMs, suppressWarning) {
         const deadline = Date.now() + (timeoutMs || 3000);
         const normalMatch = normalizeSearchText(matchText);
+        const matchTokens = tokenizeSearchText(normalMatch);
+        const shortCodeMatch = isShortCodeSearchText(normalMatch);
+        const isVisibleOption = (el) => {
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        };
 
         while (Date.now() < deadline) {
-            const options = document.querySelectorAll('[role="option"]');
+            const options = Array.from(document.querySelectorAll('[role="option"]')).filter(isVisibleOption);
+            let exactMatch = null;
+            let startsWithMatch = null;
+            let tokenMatch = null;
+            let shortCodeOptionMatch = null;
             let partialMatch = null;
 
             for (const opt of options) {
                 const optText = normalizeSearchText(opt.textContent);
                 if (optText === normalMatch) {
-                    opt.scrollIntoView?.({ block: 'nearest' });
-                    triggerElementClick(opt);
-                    return true;
+                    exactMatch = opt;
+                    break;
+                }
+
+                if (!startsWithMatch && optText.startsWith(normalMatch)) {
+                    startsWithMatch = opt;
+                }
+
+                if (!tokenMatch && matchTokens.length === 1) {
+                    const optionTokens = tokenizeSearchText(optText);
+                    if (optionTokens.some((token) => token === matchTokens[0] || token.startsWith(matchTokens[0]))) {
+                        tokenMatch = opt;
+                    }
+                }
+
+                if (!shortCodeOptionMatch && shortCodeMatch) {
+                    const optionCodes = buildShortCodeCandidatesFromOption(optText);
+                    if (optionCodes.includes(normalMatch)) {
+                        shortCodeOptionMatch = opt;
+                    }
                 }
 
                 // Allow a longer desired label to match a shorter rendered option,
@@ -1880,17 +2311,20 @@
                 }
             }
 
-            if (partialMatch) {
-                partialMatch.scrollIntoView?.({ block: 'nearest' });
-                triggerElementClick(partialMatch);
-                return true;
+            const match = exactMatch || startsWithMatch || tokenMatch || shortCodeOptionMatch || partialMatch;
+            if (match) {
+                match.scrollIntoView?.({ block: 'nearest' });
+                clickAutocompleteOption(match);
+                return {
+                    matchedText: (match.textContent || '').replace(/\s+/g, ' ').trim(),
+                };
             }
-            await delay(100);
+            await delay(40);
         }
         if (!suppressWarning) {
             console.warn('[TarHeelRatings] Option not found:', matchText);
         }
-        return false;
+        return null;
     }
 
     function findFieldInput(labelText, extraSelectors) {
@@ -1898,6 +2332,13 @@
         if (fromLabel) return fromLabel;
 
         return findInputBySelectors(extraSelectors);
+    }
+
+    function getLiveFieldInput(labelText, extraSelectors, fallbackInput) {
+        const currentInput = findFieldInput(labelText, extraSelectors);
+        if (currentInput?.isConnected) return currentInput;
+        if (fallbackInput?.isConnected) return fallbackInput;
+        return currentInput || fallbackInput || null;
     }
 
     function getFieldCurrentValue(labelText, extraSelectors) {
@@ -1916,14 +2357,14 @@
         if (!normalizedCandidate) return false;
 
         const inputValue = normalizeSearchText(getFieldCurrentValue(labelText, extraSelectors));
-        if (inputValue === normalizedCandidate || inputValue.includes(normalizedCandidate)) {
+        if (fieldTextMatchesCandidate(inputValue, normalizedCandidate)) {
             return true;
         }
 
         const visibleText = getFieldVisibleText(labelText, extraSelectors);
         if (!visibleText) return false;
 
-        return visibleText.includes(normalizedCandidate);
+        return fieldTextMatchesCandidate(visibleText, normalizedCandidate);
     }
 
     function fieldMatchesAnyValue(labelText, extraSelectors, candidates) {
@@ -1937,6 +2378,17 @@
             ...AUTOCOMPLETE_RETRY_CONFIG,
             ...(overrides || {}),
         };
+    }
+
+    function shouldRequireCommittedAutocompleteSelection(labelText) {
+        const normalizedLabel = normalizeSearchText(labelText);
+        return [
+            'term',
+            'acad career',
+            'subject',
+            'course attribute',
+            'course attribute value',
+        ].includes(normalizedLabel);
     }
 
     function isFieldInteractive(labelText, extraSelectors) {
@@ -1973,7 +2425,9 @@
     /** Select a value in an MUI Autocomplete by label + option text */
     async function selectMUIAutocomplete(labelText, optionText, extraSelectors, config) {
         const effectiveConfig = getAutocompleteRetryConfig(config);
-        const input = await waitForFieldInput(labelText, extraSelectors, effectiveConfig.inputTimeoutMs);
+        const requireOptionSelection = effectiveConfig.requireOptionSelection ?? shouldRequireCommittedAutocompleteSelection(labelText);
+        const initialInput = await waitForFieldInput(labelText, extraSelectors, effectiveConfig.inputTimeoutMs);
+        let input = initialInput;
         if (!input) {
             console.warn('[TarHeelRatings] Input not found for label:', labelText, extraSelectors || []);
             return false;
@@ -1984,35 +2438,73 @@
             return false;
         }
 
+        const normalizedOptionText = normalizeSearchText(optionText);
+
+        input = getLiveFieldInput(labelText, extraSelectors, input);
         typeIntoMUI(input, '');
-        await delay(75);
+        await delay(20);
+        input = getLiveFieldInput(labelText, extraSelectors, input);
         typeIntoMUI(input, optionText);
-        await delay(200);
+        await delay(requireOptionSelection ? 95 : 60);
+
+        if (!requireOptionSelection && fieldContainsValue(labelText, extraSelectors, optionText)) {
+            await delay(effectiveConfig.settleMs);
+            return true;
+        }
 
         const clicked = await waitAndClickOption(optionText, effectiveConfig.optionTimeoutMs, true);
         if (clicked) {
-            await delay(effectiveConfig.settleMs);
-            return waitForFieldValue(labelText, extraSelectors, [optionText], effectiveConfig.confirmTimeoutMs);
+            await delay(Math.max(effectiveConfig.settleMs, requireOptionSelection ? 120 : 0));
+            const confirmCandidates = dedupeStrings([optionText, clicked.matchedText]);
+            const confirmed = await waitForFieldValue(labelText, extraSelectors, confirmCandidates, effectiveConfig.confirmTimeoutMs);
+            if (confirmed) {
+                return true;
+            }
+            if (requireOptionSelection) {
+                const refreshedInput = getLiveFieldInput(labelText, extraSelectors, input);
+                if (refreshedInput) {
+                    refreshedInput.focus?.();
+                    pressKey(refreshedInput, 'ArrowDown');
+                    await delay(100);
+                    pressKey(refreshedInput, 'Enter');
+                    await delay(Math.max(effectiveConfig.settleMs, 140));
+                    const keyboardConfirmed = await waitForFieldValue(
+                        labelText,
+                        extraSelectors,
+                        confirmCandidates,
+                        effectiveConfig.confirmTimeoutMs
+                    );
+                    if (keyboardConfirmed) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        if (requireOptionSelection) {
+            return false;
         }
 
         pressKey(input, 'ArrowDown');
         await delay(125);
         pressKey(input, 'Enter');
-        await delay(effectiveConfig.settleMs);
+        await delay(Math.max(effectiveConfig.settleMs, requireOptionSelection ? 120 : 0));
 
         return waitForFieldValue(labelText, extraSelectors, [optionText], effectiveConfig.confirmTimeoutMs);
     }
 
     async function selectAnyAutocompleteOption(labelText, optionTexts, extraSelectors, config) {
         const effectiveConfig = getAutocompleteRetryConfig(config);
+        effectiveConfig.requireOptionSelection = effectiveConfig.requireOptionSelection ?? shouldRequireCommittedAutocompleteSelection(labelText);
         const candidates = (Array.isArray(optionTexts) ? optionTexts : [optionTexts]).filter(Boolean);
         const currentValue = normalizeSearchText(getFieldCurrentValue(labelText, extraSelectors));
-        if (candidates.some((candidate) => currentValue === normalizeSearchText(candidate))) {
+        if (!effectiveConfig.requireOptionSelection && candidates.some((candidate) => currentValue === normalizeSearchText(candidate))) {
             return true;
         }
 
         for (let attempt = 0; attempt < effectiveConfig.attempts; attempt++) {
-            if (fieldMatchesAnyValue(labelText, extraSelectors, candidates)) {
+            if (!effectiveConfig.requireOptionSelection && fieldMatchesAnyValue(labelText, extraSelectors, candidates)) {
                 return true;
             }
 
@@ -2028,7 +2520,12 @@
             }
         }
 
-        console.warn('[TarHeelRatings] Could not select any option for field:', labelText, candidates);
+        const visibleOptions = getVisibleAutocompleteOptionTexts();
+        if (visibleOptions.length) {
+            console.warn('[TarHeelRatings] Could not select any option for field:', labelText, candidates, 'Visible options:', visibleOptions);
+        } else {
+            console.warn('[TarHeelRatings] Could not select any option for field:', labelText, candidates);
+        }
         return false;
     }
 
@@ -2047,6 +2544,40 @@
         }
         console.warn('[TarHeelRatings] Search button not found');
         return false;
+    }
+
+    function buildClassSearchNavigationUrl(overrides = {}) {
+        const url = new URL(window.location.href);
+        const params = url.searchParams;
+        const readOverride = (key, fallback = '') => {
+            if (Object.prototype.hasOwnProperty.call(overrides, key)) {
+                return String(overrides[key] || '').trim();
+            }
+            return String(fallback || '').trim();
+        };
+        const setOrDelete = (key, value) => {
+            const cleanValue = String(value || '').trim();
+            if (cleanValue) params.set(key, cleanValue);
+            else params.delete(key);
+        };
+
+        setOrDelete('institution', readOverride('institution', params.get('institution') || 'UNCCH'));
+        setOrDelete('term', readOverride('term', params.get('term') || ''));
+        setOrDelete('x_acad_career', readOverride('acadCareer', params.get('x_acad_career') || 'UGRD'));
+        setOrDelete('enrl_stat', readOverride('enrollmentStatus', params.get('enrl_stat') || 'O'));
+        setOrDelete('subject', readOverride('subject', ''));
+        setOrDelete('catalog_nbr', readOverride('catalog', ''));
+        setOrDelete('crse_attr', readOverride('courseAttribute', ''));
+        setOrDelete('crse_attr_value', readOverride('courseAttributeValue', ''));
+        params.set('page', '1');
+        return url.toString();
+    }
+
+    function navigateClassSearch(overrides = {}) {
+        const nextUrl = buildClassSearchNavigationUrl(overrides);
+        if (nextUrl === window.location.href) return false;
+        window.location.assign(nextUrl);
+        return true;
     }
 
     async function resetClassSearchFilters() {
@@ -2214,12 +2745,167 @@
         });
     }
 
-    function buildTrackerContextNoticeHtml(trackerContext) {
-        if (!trackerContext?.usesApproximateCatalogYear) return '';
+    function extractExplicitSubjectCodesFromTitle(title) {
+        const stopwords = new Set(['AND', 'OR', 'ALL', 'NOTE', 'FROM', 'WITH', 'MUST']);
+        const matches = String(title || '').match(/\b[A-Z]{2,5}\b/g) || [];
+        return dedupeStrings(matches.filter((token) => !stopwords.has(token)).map((token) => token.toUpperCase()));
+    }
 
-        const trackerYear = escapeHtml(trackerContext.catalogYear || 'your tracker');
-        const sourceYear = escapeHtml(trackerContext.catalogSourceYear || 'the current UNC catalog');
-        return '<div class="thr-tracker-note">Program suggestions use the ' + sourceYear + ' catalog. Your tracker is on ' + trackerYear + ', so program-specific matches are approximate.</div>';
+    function parseStructuredRequirementRule(title) {
+        const text = String(title || '').trim();
+        if (!text) return null;
+
+        const normalized = normalizeSearchText(text);
+        const hasNumber = /\d{2,4}/.test(normalized);
+        const hasStructuredCue = /second digit|last two digits|numbered|above|below|higher|lower|between|through|beyond|under|over|level|&lt;|&gt;|<|>/.test(normalized);
+        if (!hasStructuredCue || (!hasNumber && !/second digit|last two digits/.test(normalized))) {
+            return null;
+        }
+
+        let match = normalized.match(/\bnumbered\s+(?:[a-z]{2,5}\s*)?(\d{2,4})\s*(?:-|–|—|and|to|through)\s*(?:[a-z]{2,5}\s*)?(\d{2,4})\b/);
+        if (match) {
+            return { summary: `${match[1]}-${match[2]}`, label: `${match[1]}-${match[2]}` };
+        }
+
+        match = normalized.match(/\b(?:between|from)\s+(?:[a-z]{2,5}\s*)?(\d{2,4})\s*(?:-|and|to|through)\s*(?:[a-z]{2,5}\s*)?(\d{2,4})\b/);
+        if (match) {
+            return { summary: `${match[1]}-${match[2]}`, label: `${match[1]}-${match[2]}` };
+        }
+
+        match = normalized.match(/\b(?:numbered\s+)?(?:above|over|higher than)\s+(?:[a-z]{2,5}\s*)?(\d{2,4})\b/);
+        if (match) {
+            return { summary: `above ${match[1]}`, label: `${match[1]}+` };
+        }
+
+        match = normalized.match(/\b(?:numbered\s+)?(?:below|under|lower than)\s+(?:[a-z]{2,5}\s*)?(\d{2,4})\b/);
+        if (match) {
+            return { summary: `below ${match[1]}`, label: `<${match[1]}` };
+        }
+
+        match = normalized.match(/\b(?:numbered\s+)?(\d{2,4})\s*(?:or|and)\s*(?:above|higher)\b/);
+        if (match) {
+            return { summary: `${match[1]} or above`, label: `${match[1]}+` };
+        }
+
+        match = normalized.match(/\b(?:numbered\s+)?(\d{2,4})\s*(?:or|and)\s*(?:below|lower)\b/);
+        if (match) {
+            return { summary: `${match[1]} or below`, label: `<${match[1]}` };
+        }
+
+        match = normalized.match(/\b(?:at\s+or\s+above|above)\s+the\s+(\d{2,4})\s+level\b/);
+        if (match) {
+            return { summary: `${match[1]} level or above`, label: `${match[1]}+` };
+        }
+
+        match = normalized.match(/\bat the\s+(\d{2,4})\s+level\s+or\s+(?:above|higher)\b/);
+        if (match) {
+            return { summary: `${match[1]} level or above`, label: `${match[1]}+` };
+        }
+
+        match = normalized.match(/\b(\d{2,4})-level\s+or\s+(?:above|higher)\b/);
+        if (match) {
+            return { summary: `${match[1]} level or above`, label: `${match[1]}+` };
+        }
+
+        match = normalized.match(/\bbeyond\s+(?:[a-z]{2,5}\s*)?(\d{2,4})\b/);
+        if (match) {
+            return { summary: `above ${match[1]}`, label: `${match[1]}+` };
+        }
+
+        match = normalized.match(/(?:^|[^\w])(?:<|&lt;)\s*(\d{2,4})\b/);
+        if (match) {
+            return { summary: `below ${match[1]}`, label: `<${match[1]}` };
+        }
+
+        match = normalized.match(/(?:^|[^\w])(?:>|&gt;)\s*(\d{2,4})\b/);
+        if (match) {
+            return { summary: `above ${match[1]}`, label: `${match[1]}+` };
+        }
+
+        if (/second digit/.test(normalized)) {
+            return { summary: 'the numbered-course rule', label: 'numbering' };
+        }
+
+        if (/last two digits/.test(normalized)) {
+            return { summary: 'the last-two-digits rule', label: 'numbering' };
+        }
+
+        return null;
+    }
+
+    async function inferRequirementSubjectCodes(requirement, trackerContext) {
+        const programMatch = getRequirementProgramContext(requirement, trackerContext);
+        if (!programMatch?.matched || !programMatch.programSlug) return [];
+
+        const programIndex = await loadProgramIndexData();
+        const program = programIndex?.programs?.[programMatch.programSlug];
+        const groups = Array.isArray(program?.groups) ? program.groups : [];
+        if (!groups.length) return [];
+
+        const subjectCounts = new Map();
+        groups.forEach((group) => {
+            (Array.isArray(group?.courses) ? group.courses : []).forEach((course) => {
+                const subject = extractSubjectFromCourseCode(course);
+                if (!subject) return;
+                subjectCounts.set(subject, (subjectCounts.get(subject) || 0) + 1);
+            });
+        });
+
+        const rankedSubjects = [...subjectCounts.entries()]
+            .map(([subject, count]) => ({ subject, count }))
+            .sort((a, b) => b.count - a.count);
+        if (!rankedSubjects.length) return [];
+
+        const topCount = rankedSubjects[0].count;
+        return rankedSubjects
+            .filter(({ count }) => count >= Math.max(3, Math.ceil(topCount * 0.45)))
+            .map(({ subject }) => subject)
+            .slice(0, 3);
+    }
+
+    async function resolveStructuredRequirementActionDescriptor(requirement, trackerContext) {
+        const rawTitle = String(requirement?.title || '').trim();
+        const searchTitle = stripRequirementPrefix(rawTitle) || rawTitle;
+        if (extractStandaloneCourseSearch(searchTitle)) return null;
+
+        const rule = parseStructuredRequirementRule(rawTitle) || parseStructuredRequirementRule(searchTitle);
+        if (!rule) return null;
+
+        let subjects = extractExplicitSubjectCodesFromTitle(rawTitle);
+        if (!subjects.length) {
+            subjects = await inferRequirementSubjectCodes(requirement, trackerContext);
+        }
+        subjects = dedupeStrings(subjects);
+        if (!subjects.length) return null;
+
+        if (subjects.length === 1) {
+            const subject = subjects[0];
+            return {
+                mode: 'direct-search',
+                note: `Runs a ${subject} department search. ConnectCarolina cannot directly filter ${rule.summary} in this form.`,
+                searchSpec: {
+                    type: 'subject_only',
+                    subject,
+                    summary: rule.summary,
+                },
+            };
+        }
+
+        return {
+            mode: 'button-actions',
+            note: `Choose a department search. ConnectCarolina cannot directly filter ${rule.summary} in this form.`,
+            choiceConfig: {
+                label: 'Choose a Department Search',
+                sourceNote: 'Open the most relevant department and narrow further from there.',
+                options: subjects.map((subject) => ({
+                    label: `${subject} ${rule.label}`,
+                    searchMode: 'subject_only',
+                    searchSubject: subject,
+                    searchSummary: rule.summary,
+                    searchTitle: `${subject} ${rule.label}`,
+                })),
+            },
+        };
     }
 
     async function resolveRequirementActionDescriptor(requirement, trackerContext) {
@@ -2233,13 +2919,16 @@
             };
         }
 
-        const courseMatch = searchTitle.match(/\b([A-Z]{2,5})\s+(\d{1,4}[A-Z]?)\b/i);
-        if (courseMatch) {
-            const subject = courseMatch[1].toUpperCase();
-            const catalog = courseMatch[2].toUpperCase();
+        const structuredDescriptor = await resolveStructuredRequirementActionDescriptor(requirement, trackerContext);
+        if (structuredDescriptor) {
+            return structuredDescriptor;
+        }
+
+        const standaloneCourse = extractStandaloneCourseSearch(searchTitle);
+        if (standaloneCourse) {
             return {
                 mode: 'direct-search',
-                note: `Runs a direct Class Search for ${subject} ${catalog}.`,
+                note: `Runs a direct Class Search for ${standaloneCourse.subject} ${standaloneCourse.catalog}.`,
             };
         }
 
@@ -2312,6 +3001,12 @@
     }
 
     async function runGenEdSearchAttempt(searchTitle, matchedValues) {
+        setTrackerSearchStatus('Resetting existing filters for a Gen Ed search…', 'info', true);
+        const reset = await resetClassSearchFilters();
+        if (reset) {
+            await ensureClassSearchDefaults();
+        }
+
         setTrackerSearchStatus('Setting Course Attribute to IDEA…', 'info', true);
         const attributeSet = await selectAnyAutocompleteOption(
             'Course Attribute',
@@ -2395,58 +3090,30 @@
     }
 
     async function runCourseSearchAttempt(searchTitle, subject, catalog) {
-        setTrackerSearchStatus('Resetting existing filters for a direct course search…', 'info', true);
-        const reset = await resetClassSearchFilters();
-        if (reset) {
-            await ensureClassSearchDefaults();
-        }
+        setTrackerSearchStatus(`Opening Class Search for ${subject} ${catalog}…`, 'info', true);
+        navigateClassSearch({
+            subject,
+            catalog,
+            courseAttribute: '',
+            courseAttributeValue: '',
+        });
+        return { ok: true };
+    }
 
-        setTrackerSearchStatus(`Setting Subject to ${subject}…`, 'info', true);
-        const subjectSet = await selectAnyAutocompleteOption('Subject', [subject], ['input#SUBJECT']);
-        if (!subjectSet) {
-            return {
-                ok: false,
-                failureMessage: `Couldn't set Subject to ${subject} for ${searchTitle}. Please retry.`,
-            };
-        }
-
-        const subjectConfirmed = await waitForFieldValue('Subject', ['input#SUBJECT'], [subject], 1800);
-        if (!subjectConfirmed) {
-            return {
-                ok: false,
-                failureMessage: `Subject would not stay on ${subject} for ${searchTitle}. Please retry.`,
-            };
-        }
-
-        const catInput = await waitForFieldInput('Catalog Nbr', ['input#CATALOG_NBR'], 4000);
-        if (!catInput) {
-            return {
-                ok: false,
-                failureMessage: `Couldn't find Catalog Number for ${searchTitle}. Please retry.`,
-            };
-        }
-
-        setTrackerSearchStatus(`Setting Catalog Number to ${catalog}…`, 'info', true);
-        typeIntoMUI(catInput, '');
-        await delay(75);
-        typeIntoMUI(catInput, catalog);
-        const catalogConfirmed = await waitForFieldValue('Catalog Nbr', ['input#CATALOG_NBR'], [catalog], 1500);
-        if (!catalogConfirmed) {
-            return {
-                ok: false,
-                failureMessage: `Catalog Number would not stay on ${catalog} for ${searchTitle}. Please retry.`,
-            };
-        }
-
-        setTrackerSearchStatus('Running Class Search…', 'info', true);
-        const searched = await clickSearchButton();
-        if (!searched) {
-            return {
-                ok: false,
-                failureMessage: `Couldn't trigger Class Search for ${searchTitle}. Please retry.`,
-            };
-        }
-
+    async function runSubjectDepartmentSearchAttempt(searchTitle, subject, searchSpec = {}) {
+        setTrackerSearchStatus(
+            searchSpec?.summary
+                ? `Opening ${subject}. ConnectCarolina cannot directly filter ${searchSpec.summary} here.`
+                : `Opening ${subject} courses in Class Search.`,
+            'info',
+            true
+        );
+        navigateClassSearch({
+            subject,
+            catalog: '',
+            courseAttribute: '',
+            courseAttributeValue: '',
+        });
         return { ok: true };
     }
 
@@ -2457,6 +3124,7 @@
         const rawTitle = String(title || '').trim();
         if (!rawTitle) return;
         const cardKey = String(options?.cardKey || '').trim();
+        const searchSpec = options?.searchSpec || null;
         if (featureTutorialStep === CLASS_SEARCH_TUTORIAL_ACTION_STEP) {
             completeClassSearchTutorial();
         }
@@ -2475,6 +3143,32 @@
 
             await ensureClassSearchDefaults();
             const matchedValues = findGenEdValue(rawTitle).length ? findGenEdValue(rawTitle) : findGenEdValue(searchTitle);
+
+            if (searchSpec?.type === 'subject_only' && searchSpec.subject) {
+                console.log('[TarHeelRatings] Subject-only department search:', searchSpec.subject, searchSpec.summary || '');
+                let attemptResult = null;
+                for (let attempt = 0; attempt < 2; attempt++) {
+                    if (attempt > 0) {
+                        setTrackerSearchStatus(`Retrying ${searchSpec.subject} department search…`, 'info', true);
+                    }
+                    attemptResult = await runSubjectDepartmentSearchAttempt(searchTitle, searchSpec.subject, searchSpec);
+                    if (attemptResult?.ok) break;
+                    await delay(250);
+                }
+                if (!attemptResult?.ok) {
+                    reportClassSearchFailure(searchTitle, attemptResult?.failureMessage);
+                    return;
+                }
+
+                setTrackerSearchStatus(
+                    searchSpec?.summary
+                        ? `Class Search opened for ${searchSpec.subject}. Narrow manually for ${searchSpec.summary}.`
+                        : `Class Search opened for ${searchSpec.subject}.`,
+                    'success',
+                    false
+                );
+                return;
+            }
 
             if (matchedValues.length > 0) {
                 console.log('[TarHeelRatings] Gen Ed search: IDEA →', matchedValues[0]);
@@ -2497,10 +3191,10 @@
                 return;
             }
 
-            const courseMatch = searchTitle.match(/\b([A-Z]{2,5})\s+(\d{1,4}[A-Z]?)\b/i);
-            if (courseMatch) {
-                const subject = courseMatch[1].toUpperCase();
-                const catalog = courseMatch[2].toUpperCase();
+            const standaloneCourse = extractStandaloneCourseSearch(searchTitle);
+            if (standaloneCourse) {
+                const subject = standaloneCourse.subject;
+                const catalog = standaloneCourse.catalog;
                 console.log('[TarHeelRatings] Course search:', subject, catalog);
                 setTrackerSearchStatus(`Searching Class Search for ${subject} ${catalog}.`, 'info', true);
                 let attemptResult = null;
@@ -2537,14 +3231,21 @@
     /* ── Tracker Sidebar Injection ── */
     function injectTrackerSidebar() {
         if (!isClassSearchPage()) return;
-        
+
         // Prevent double injection in nested/hidden iframes
         if (window !== window.top && window.name !== 'TargetContent' && document.body.clientWidth < 500) return;
 
-        if (document.getElementById('thr-tracker-container')) return;
+        ensureClassSearchTrackerBindings();
+        ensureClassSearchHeaderLauncher();
+
+        if (getTrackerContainer()) {
+            syncClassSearchTrackerChrome();
+            return;
+        }
+
         // Clean up legacy sidebar if it exists
-        const legacy = document.getElementById('thr-tracker-sidebar');
-        if (legacy && !legacy.closest('#thr-tracker-container')) legacy.remove();
+        const legacy = getTrackerSidebar();
+        if (legacy && !legacy.closest(`#${CLASS_SEARCH_TRACKER_CONTAINER_ID}`)) legacy.remove();
 
         safeLocalStorageGet(['thr_missing_requirements', 'thr_tracker_context', 'thr_tracker_status', 'thr_tracker_error'], async (result) => {
             const reqs = Array.isArray(result.thr_missing_requirements) ? result.thr_missing_requirements : [];
@@ -2553,9 +3254,17 @@
             const error = result.thr_tracker_error || '';
             const requirementRecordsByKey = new Map();
             const requirementActionByRequirement = new WeakMap();
-            
+            classSearchTrackerMeta = {
+                status,
+                count: reqs.length,
+            };
+
             // Double check inside the async callback to avoid race conditions
-            if (document.getElementById('thr-tracker-container')) return;
+            if (getTrackerContainer()) {
+                ensureClassSearchHeaderLauncher();
+                syncClassSearchTrackerChrome();
+                return;
+            }
 
             if (status && !['parsing', 'error', 'all_satisfied'].includes(status) && reqs.length) {
                 const actionRecords = await Promise.all(
@@ -2568,36 +3277,28 @@
                     requirementActionByRequirement.set(requirement, actionDescriptor);
                 });
 
-                if (document.getElementById('thr-tracker-container')) return;
+                if (getTrackerContainer()) {
+                    ensureClassSearchHeaderLauncher();
+                    syncClassSearchTrackerChrome();
+                    return;
+                }
             }
 
             const container = document.createElement('div');
-            container.id = 'thr-tracker-container';
+            container.id = CLASS_SEARCH_TRACKER_CONTAINER_ID;
             container.className = 'thr-tracker-container';
 
-            const toggle = document.createElement('button');
-            toggle.className = 'thr-tracker-toggle';
-            let badgeText = '0';
-            let badgeStyle = 'background:#64748b;';
-            if (status === 'parsing') {
-                badgeText = '...';
-                badgeStyle = 'background:#2563eb;';
-            } else if (status === 'error') {
-                badgeText = '!';
-                badgeStyle = 'background:#b91c1c;';
-            } else if (status === 'parsed') {
-                badgeText = String(reqs.length);
-                badgeStyle = 'background:#e11d48;';
-            } else if (status === 'all_satisfied') {
-                badgeText = '0';
-                badgeStyle = 'background:#15803d;';
-            } else {
-                badgeText = '—';
-            }
-            toggle.innerHTML = '<span class="thr-tracker-toggle-icon">' + ICON.warning + '</span><span style="margin-left:6px;">Tracker</span> <span class="thr-tracker-badge" style="margin-left:8px;' + badgeStyle + '">' + badgeText + '</span>';
+            const edgeHandle = document.createElement('button');
+            edgeHandle.className = 'thr-tracker-edge-handle';
+            edgeHandle.type = 'button';
+            edgeHandle.setAttribute('aria-label', 'Open TarHeel Tracker sidebar');
+            edgeHandle.innerHTML = `
+                <img class="thr-tracker-edge-handle__icon" src="${safeRuntimeGetUrl('icons/logo128px.png')}" alt="">
+                <span class="thr-tracker-edge-handle__label">Tracker</span>
+            `;
 
             const sidebar = document.createElement('aside');
-            sidebar.id = 'thr-tracker-sidebar';
+            sidebar.id = CLASS_SEARCH_TRACKER_SIDEBAR_ID;
             sidebar.className = 'thr-tracker-sidebar';
 
             let html = '<div class="thr-tracker-header">' +
@@ -2632,8 +3333,6 @@
                     '<div style="color:var(--thr-text-secondary);font-size:12px;margin-top:6px;">Visit the Tar Heel Tracker page to sync your data.</div>' +
                     '</div>';
             } else {
-                html += buildTrackerContextNoticeHtml(trackerContext);
-
                 const sections = buildTrackerRequirementSections(reqs, trackerContext);
                 let requirementIndex = 0;
 
@@ -2659,34 +3358,44 @@
             html += '</div>';
             sidebar.innerHTML = html;
 
-            container.appendChild(toggle);
+            container.appendChild(edgeHandle);
             container.appendChild(sidebar);
             document.body.appendChild(container);
+            ensureClassSearchHeaderLauncher();
+            syncClassSearchTrackerChrome();
 
-            // Pop-out logic
-            toggle.addEventListener('click', (e) => {
+            edgeHandle.addEventListener('click', (e) => {
                 e.stopPropagation();
-                container.classList.toggle('thr-open');
-                if (container.classList.contains('thr-open')) {
-                    toggle.style.opacity = '0';
-                    toggle.style.pointerEvents = 'none';
+                setClassSearchTrackerOpen(true);
+            });
+
+            edgeHandle.addEventListener('mouseenter', () => {
+                if (!classSearchTrackerOpen) {
+                    setClassSearchTrackerPeek(true);
+                }
+            });
+
+            edgeHandle.addEventListener('mouseleave', () => {
+                if (!classSearchTrackerOpen) {
+                    queueClassSearchTrackerPeekHide(120);
+                }
+            });
+
+            container.addEventListener('mouseenter', () => {
+                if (!classSearchTrackerOpen) {
+                    setClassSearchTrackerPeek(true);
+                }
+            });
+
+            container.addEventListener('mouseleave', () => {
+                if (!classSearchTrackerOpen) {
+                    queueClassSearchTrackerPeekHide(120);
                 }
             });
 
             container.querySelector('.thr-tracker-close').addEventListener('click', (e) => {
                 e.stopPropagation();
-                container.classList.remove('thr-open');
-                toggle.style.opacity = '1';
-                toggle.style.pointerEvents = 'auto';
-            });
-
-            // Click outside to close
-            document.addEventListener('click', (e) => {
-                if (container.classList.contains('thr-open') && !container.contains(e.target)) {
-                    container.classList.remove('thr-open');
-                    toggle.style.opacity = '1';
-                    toggle.style.pointerEvents = 'auto';
-                }
+                setClassSearchTrackerOpen(false);
             });
 
             // Handle Card Clicks for Auto-Search
@@ -2705,7 +3414,21 @@
                 if (optionBtn) {
                     e.stopPropagation();
                     const optionTitle = optionBtn.getAttribute('data-search-title');
+                    const optionMode = optionBtn.getAttribute('data-search-mode') || '';
+                    const optionSubject = optionBtn.getAttribute('data-search-subject') || '';
+                    const optionSummary = optionBtn.getAttribute('data-search-summary') || '';
                     const cardKey = optionBtn.closest('.thr-tracker-card')?.getAttribute('data-req-key') || '';
+                    if (optionMode === 'subject_only' && optionSubject) {
+                        handleRequirementClick(optionTitle || optionSubject, {
+                            cardKey,
+                            searchSpec: {
+                                type: 'subject_only',
+                                subject: optionSubject,
+                                summary: optionSummary,
+                            },
+                        });
+                        return;
+                    }
                     if (optionTitle) handleRequirementClick(optionTitle, { cardKey });
                     return;
                 }
@@ -2716,10 +3439,14 @@
                     if (actionMode !== 'direct-search') return;
 
                     const reqKey = card.getAttribute('data-req-key') || '';
-                    const requirement = requirementRecordsByKey.get(reqKey)?.requirement;
+                    const record = requirementRecordsByKey.get(reqKey);
+                    const requirement = record?.requirement;
                     const title = requirement?.title || card.getAttribute('data-req-title');
                     if (!title) return;
-                    handleRequirementClick(title, { cardKey: reqKey });
+                    handleRequirementClick(title, {
+                        cardKey: reqKey,
+                        searchSpec: record?.actionDescriptor?.searchSpec || null,
+                    });
                 }
             });
 
@@ -2728,8 +3455,9 @@
     }
 
     function loadFeatureTutorialStep(callback) {
-        safeLocalStorageGet([FEATURE_TUTORIAL_STORAGE_KEY], (result) => {
+        safeLocalStorageGet([FEATURE_TUTORIAL_STORAGE_KEY, FEATURE_TUTORIAL_CLOSED_STORAGE_KEY], (result) => {
             featureTutorialStep = result[FEATURE_TUTORIAL_STORAGE_KEY] || '';
+            featureTutorialClosed = !!result[FEATURE_TUTORIAL_CLOSED_STORAGE_KEY];
             featureTutorialStepLoaded = true;
             if (callback) callback(featureTutorialStep);
         });
@@ -2757,34 +3485,39 @@
         setFeatureTutorialStep('');
     }
 
+    function setFeatureTutorialClosed(closed) {
+        featureTutorialClosed = !!closed;
+        if (featureTutorialClosed) {
+            safeLocalStorageSet({ [FEATURE_TUTORIAL_CLOSED_STORAGE_KEY]: true });
+        } else {
+            safeLocalStorageRemove([FEATURE_TUTORIAL_CLOSED_STORAGE_KEY]);
+        }
+    }
+
     function clearClassSearchTutorialCompletion() {
         classSearchTutorialCompletedAt = 0;
-        if (classSearchTutorialCompletionTimer) {
-            window.clearTimeout(classSearchTutorialCompletionTimer);
-            classSearchTutorialCompletionTimer = 0;
-        }
     }
 
     function markClassSearchTutorialCompleted() {
         clearClassSearchTutorialCompletion();
         classSearchTutorialCompletedAt = Date.now();
-        classSearchTutorialCompletionTimer = window.setTimeout(() => {
-            classSearchTutorialCompletionTimer = 0;
-            classSearchTutorialCompletedAt = 0;
-            if (featureTutorialStep === CLASS_SEARCH_TUTORIAL_COMPLETE_STEP) {
-                clearFeatureTutorialStep();
-            }
-            queueClassSearchTutorialRefresh();
-        }, 6000);
     }
 
     function shouldShowClassSearchTutorialCompletion() {
-        return classSearchTutorialCompletedAt > 0 && (Date.now() - classSearchTutorialCompletedAt) < 6000;
+        return featureTutorialStep === CLASS_SEARCH_TUTORIAL_COMPLETE_STEP;
     }
 
     function completeClassSearchTutorial() {
         setFeatureTutorialStep(CLASS_SEARCH_TUTORIAL_COMPLETE_STEP);
         markClassSearchTutorialCompleted();
+        queueClassSearchTutorialRefresh();
+    }
+
+    function finalizeClassSearchTutorial() {
+        clearClassSearchTutorialCompletion();
+        setFeatureTutorialClosed(true);
+        clearFeatureTutorialStep();
+        removeClassSearchTutorial();
         queueClassSearchTutorialRefresh();
     }
 
@@ -2829,7 +3562,11 @@
             <div id="thr-class-search-tour-eyebrow" class="thr-tracker-sync-panel__eyebrow">Tutorial</div>
             <div id="thr-class-search-tour-title" class="thr-tracker-sync-panel__title">Follow the next step</div>
             <div id="thr-class-search-tour-detail" class="thr-tracker-sync-panel__detail"></div>
+            <div id="thr-class-search-tour-actions" class="thr-class-search-tour-panel__actions" hidden>
+                <button id="thr-class-search-tour-done" class="thr-class-search-tour-panel__done" type="button">Done</button>
+            </div>
         `;
+        panel.querySelector('#thr-class-search-tour-done')?.addEventListener('click', finalizeClassSearchTutorial);
         document.body.appendChild(panel);
         return panel;
     }
@@ -2848,16 +3585,21 @@
             });
     }
 
-    function setClassSearchTutorialPanelState({ eyebrow, title, detail = '' }) {
+    function setClassSearchTutorialPanelState({ eyebrow, title, detail = '', showDone = false }) {
         const panel = ensureClassSearchTutorialPanel();
         const eyebrowEl = panel.querySelector('#thr-class-search-tour-eyebrow');
         const titleEl = panel.querySelector('#thr-class-search-tour-title');
         const detailEl = panel.querySelector('#thr-class-search-tour-detail');
+        const actionsEl = panel.querySelector('#thr-class-search-tour-actions');
+        const isCompletionState = featureTutorialStep === CLASS_SEARCH_TUTORIAL_COMPLETE_STEP;
         if (eyebrowEl) eyebrowEl.textContent = eyebrow || '';
         if (titleEl) titleEl.textContent = title || '';
         if (detailEl) {
             detailEl.textContent = detail;
             detailEl.style.display = detail ? '' : 'none';
+        }
+        if (actionsEl) {
+            actionsEl.hidden = !(showDone && isCompletionState);
         }
     }
 
@@ -3013,8 +3755,8 @@
     }
 
     function getTrackerSidebarToggleTarget() {
-        const toggle = document.querySelector('#thr-tracker-container .thr-tracker-toggle');
-        return hasVisibleBox(toggle) ? toggle : null;
+        const launcher = getClassSearchTrackerLauncher();
+        return hasVisibleBox(launcher) ? launcher : null;
     }
 
     function getActionableTrackerTargets() {
@@ -3052,16 +3794,26 @@
             return;
         }
 
+        if (featureTutorialClosed) {
+            if (featureTutorialStep) {
+                clearFeatureTutorialStep();
+            }
+            clearClassSearchTutorialCompletion();
+            removeClassSearchTutorial();
+            return;
+        }
+
         if (featureTutorialStep === CLASS_SEARCH_TUTORIAL_COMPLETE_STEP || shouldShowClassSearchTutorialCompletion()) {
-                const sidebar = document.getElementById('thr-tracker-sidebar');
-                setClassSearchTutorialPanelState({
-                    eyebrow: 'Tutorial Complete',
-                    title: "That's it!",
-                    detail: 'Your Tar Heel Tracker requirements are ready. Any active item in this sidebar can kick off another Class Search.',
-                });
-                positionClassSearchTutorialPanel(sidebar, { preferredMode: 'top-left' });
-                hideClassSearchTutorialTarget();
-                return;
+            const sidebar = getTrackerSidebar();
+            setClassSearchTutorialPanelState({
+                eyebrow: 'Tutorial Complete',
+                title: "That's it!",
+                detail: 'Your Tar Heel Tracker requirements are ready. Any active item in this sidebar can kick off another Class Search.',
+                showDone: true,
+            });
+            positionClassSearchTutorialPanel(sidebar, { preferredMode: 'top-left' });
+            hideClassSearchTutorialTarget();
+            return;
         }
 
         if (!featureTutorialStep || ![CLASS_SEARCH_TUTORIAL_TOGGLE_STEP, CLASS_SEARCH_TUTORIAL_ACTION_STEP].includes(featureTutorialStep)) {
@@ -3069,9 +3821,9 @@
             return;
         }
 
-        const container = document.getElementById('thr-tracker-container');
+        const container = getTrackerContainer();
         if (featureTutorialStep === CLASS_SEARCH_TUTORIAL_TOGGLE_STEP) {
-            const toggle = getTrackerSidebarToggleTarget();
+            const launcher = getTrackerSidebarToggleTarget();
             if (container?.classList.contains('thr-open')) {
                 setFeatureTutorialStep(CLASS_SEARCH_TUTORIAL_ACTION_STEP);
                 queueClassSearchTutorialRefresh();
@@ -3080,12 +3832,12 @@
 
             setClassSearchTutorialPanelState({
                 eyebrow: 'Tutorial • Step 8 of 9',
-                title: toggle ? 'Click Tracker icon' : 'Wait for Tracker',
-                detail: 'Open the Tar Heel Tracker drawer from Class Search.',
+                title: launcher ? 'Click TarHeel Tracker' : 'Wait for TarHeel Tracker',
+                detail: 'Use the TarHeel Tracker button beside Preferences to open the tracker drawer.',
             });
-            positionClassSearchTutorialPanel(toggle, { preferredMode: 'top-left' });
-            bindClassSearchTutorialTarget(toggle, CLASS_SEARCH_TUTORIAL_TOGGLE_STEP, CLASS_SEARCH_TUTORIAL_ACTION_STEP);
-            if (toggle) positionClassSearchTutorialTarget(toggle);
+            positionClassSearchTutorialPanel(launcher, { preferredMode: 'top-left' });
+            bindClassSearchTutorialTarget(launcher, CLASS_SEARCH_TUTORIAL_TOGGLE_STEP, CLASS_SEARCH_TUTORIAL_ACTION_STEP);
+            if (launcher) positionClassSearchTutorialTarget(launcher);
             else hideClassSearchTutorialTarget();
             return;
         }
@@ -3099,12 +3851,12 @@
 
             const targets = getActionableTrackerTargets();
             const target = targets[0] || null;
-            const sidebar = document.getElementById('thr-tracker-sidebar');
+            const sidebar = getTrackerSidebar();
             setClassSearchTutorialPanelState({
                 eyebrow: 'Tutorial • Step 9 of 9',
                 title: target ? 'Choose any active tracker requirement' : 'Wait for a searchable requirement',
                 detail: target
-                    ? 'The whole Tar Heel Tracker sidebar is highlighted because any non-grey item here can run a real Class Search action right away.'
+                    ? 'Clicking any non-grey item here can run a real Class Search action right away.'
                     : 'Only requirements with a real Class Search action stay active.',
             });
             positionClassSearchTutorialPanel(sidebar || target, { preferredMode: 'top-left' });
@@ -3132,11 +3884,15 @@
             featureTutorialStep = changes[FEATURE_TUTORIAL_STORAGE_KEY].newValue || '';
             queueClassSearchTutorialRefresh();
         }
+        if (changes[FEATURE_TUTORIAL_CLOSED_STORAGE_KEY]) {
+            featureTutorialClosed = !!changes[FEATURE_TUTORIAL_CLOSED_STORAGE_KEY].newValue;
+            queueClassSearchTutorialRefresh();
+        }
 
         if (!changes.thr_missing_requirements && !changes.thr_tracker_context && !changes.thr_tracker_status && !changes.thr_tracker_error) return;
         if (!isClassSearchPage()) return;
 
-        const existing = document.getElementById('thr-tracker-container');
+        const existing = getTrackerContainer();
         if (existing) {
             existing.remove();
         }
@@ -3148,18 +3904,29 @@
     function init() {
         const isCart = isShoppingCartPage();
         const isSearch = isClassSearchPage();
-        if (!isCart && !isSearch) return;
+        if (!isCart && !isSearch) {
+            getTrackerContainer()?.remove();
+            removeClassSearchHeaderLauncher();
+            removeClassSearchTutorial();
+            return;
+        }
 
         document.body.classList.add('thr-reskin');
         fixSidebarIcons();
         wireBusyButtons();
-        
+
         if (isSearch) {
+            ensureClassSearchTrackerBindings();
             wireClassSearchPreferencePersistence();
             ensureFeatureTutorialStepLoaded(() => {
                 queueClassSearchTutorialRefresh();
             });
+            ensureClassSearchHeaderLauncher();
             injectTrackerSidebar();
+        } else {
+            getTrackerContainer()?.remove();
+            removeClassSearchHeaderLauncher();
+            removeClassSearchTutorial();
         }
 
         if (isCart) {
@@ -3174,20 +3941,31 @@
     const observer = new MutationObserver(() => {
         const isCart = isShoppingCartPage();
         const isSearch = isClassSearchPage();
-        if (!isCart && !isSearch) return;
+        if (!isCart && !isSearch) {
+            getTrackerContainer()?.remove();
+            removeClassSearchHeaderLauncher();
+            removeClassSearchTutorial();
+            return;
+        }
 
         if (!document.body.classList.contains('thr-reskin'))
             document.body.classList.add('thr-reskin');
 
         fixSidebarIcons();
         wireBusyButtons();
-        
+
         if (isSearch) {
+            ensureClassSearchTrackerBindings();
             wireClassSearchPreferencePersistence();
             ensureFeatureTutorialStepLoaded(() => {
                 queueClassSearchTutorialRefresh();
             });
+            ensureClassSearchHeaderLauncher();
             injectTrackerSidebar();
+        } else {
+            getTrackerContainer()?.remove();
+            removeClassSearchHeaderLauncher();
+            removeClassSearchTutorial();
         }
 
         if (isCart) {

@@ -57,6 +57,19 @@ const TRACKER_PAGE_IGNORE_PATTERNS = [
     /^Minimum Cumulative Grade Point Average\b/i,
     /^You are following /i,
     /^Calculated Hours for Your Enrollment Appointment$/i,
+    /^Required Major Courses Fulfilling General Education Requirements$/i,
+    /^School Core Courses$/i,
+    /^Additional Courses$/i,
+    /^Additional Requirements$/i,
+    /^Supplemental General Education$/i,
+    /^Degree Requirements:\s+/i,
+    /^Gateway:\s+/i,
+    /^Level\s+\d+\s*$/i,
+    /^Units$/i,
+    /^Choice$/i,
+    /^Minimum of \d+ credits?\b/i,
+    /^Psychology Program Areas(?:\s*\([^)]*\))?$/i,
+    /^(?:Major|Minor|MEJO) Courses In-Progress$/i,
 ];
 
 const TRACKER_CONTAINER_SUMMARY_PATTERNS = [
@@ -108,8 +121,15 @@ function normalizeTrackerPageLine(line) {
         .trim();
 }
 
+function stripTrackerStatusPrefix(line) {
+    return normalizeTrackerPageLine(String(line || ''))
+        .replace(/^[∆▲•*·-]\s*/u, '')
+        .replace(/^(?:Overall Requirement\s+)?(?:Not Satisfied|Satisfied(?:\s*-\s*IP)?):\s*/i, '')
+        .trim();
+}
+
 function normalizeTrackerPageTitle(line) {
-    return normalizeTrackerPageLine(line)
+    return stripTrackerStatusPrefix(line)
         .replace(/^Expand\s+/i, '')
         .replace(/\s+details$/i, '')
         .replace(/\s*\((?:RG|RQ)\d+(?::LN\d+)?\)\s*$/i, '')
@@ -145,7 +165,7 @@ function normalizeSearchScopeKind(kind) {
 }
 
 function parseTrackerProgramDeclaration(line) {
-    const match = normalizeTrackerPageLine(line).match(/^(Major|Minor|Additional|Track|Concentration|Certificate):\s*(.+)$/i);
+    const match = stripTrackerStatusPrefix(line).match(/^(Major|Minor|Additional|Track|Concentration|Certificate):\s*(.+)$/i);
     if (!match) return null;
 
     const label = normalizeTrackerProgramLabel(match[2]);
@@ -158,7 +178,7 @@ function parseTrackerProgramDeclaration(line) {
 }
 
 function parseTrackerFollowingProgram(line) {
-    const normalizedLine = normalizeTrackerPageLine(line);
+    const normalizedLine = stripTrackerStatusPrefix(line);
     if (!/^You are following /i.test(normalizedLine)) return null;
 
     const label = normalizeTrackerProgramLabel(
@@ -177,8 +197,26 @@ function parseTrackerFollowingProgram(line) {
 }
 
 function parseTrackerCatalogYear(line) {
-    const match = normalizeTrackerPageLine(line).match(/^Catalog Year\b[:\s-]*(20\d{2}-20\d{2})/i);
+    const match = stripTrackerStatusPrefix(line).match(/^Catalog Year\b[:\s-]*(20\d{2}-20\d{2})/i);
     return match?.[1] || '';
+}
+
+function parseTrackerStatusLine(line) {
+    const normalized = normalizeTrackerPageLine(line);
+    if (!normalized) return null;
+
+    if (/^NOT SATISFIED$/i.test(normalized)) {
+        return { status: 'not_satisfied', title: '', overall: false };
+    }
+
+    const inlineMatch = normalized.match(/^(?:[∆▲•*·-]\s*)?(Overall Requirement\s+)?Not Satisfied:\s*(.+)$/i);
+    if (!inlineMatch) return null;
+
+    return {
+        status: 'not_satisfied',
+        title: normalizeTrackerPageTitle(inlineMatch[2]),
+        overall: !!inlineMatch[1],
+    };
 }
 
 function isTrackerGeneralSectionLine(line) {
@@ -219,7 +257,7 @@ function resolveSectionProgram(line, activePrograms, currentProgram) {
         };
     }
 
-    if (/^(Core Courses|Electives|Subfield Check|Course Check)\b/i.test(normalized)) {
+    if (/^(Core Courses|Electives|Subfield Check|Course Check|School Core Courses|Additional Courses|Additional Requirements|Supplemental General Education|Required Major Courses Fulfilling General Education Requirements|Degree Requirements:|Gateway:|Psychology Program Areas)\b/i.test(normalized)) {
         return {
             program: currentProgram,
             sectionLabel: normalized,
@@ -328,6 +366,22 @@ function extractTrackerRequirementDetails(lines, titleIndex, statusIndex) {
     return '';
 }
 
+function extractInlineTrackerRequirementDetails(lines, statusIndex) {
+    const boundary = Math.min(lines.length, statusIndex + 6);
+    const nearby = lines
+        .slice(statusIndex + 1, boundary)
+        .map(normalizeTrackerPageLine)
+        .filter((line) => line && !parseTrackerStatusLine(line));
+    const joined = nearby.join(' ');
+    const tallyMatch = joined.match(/(?:Required\s+Completed\s+Needed|Courses|Units)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)/i);
+
+    if (tallyMatch && Number(tallyMatch[3]) > 0) {
+        return `${tallyMatch[1]} required, ${tallyMatch[2]} completed, ${tallyMatch[3]} needed`;
+    }
+
+    return '';
+}
+
 function findTrackerRequirementTitle(lines, statusIndex, lineContexts) {
     const scanStart = Math.max(0, statusIndex - 10);
 
@@ -396,7 +450,19 @@ export function parseTrackerPageData(fullText) {
     const { catalogYear, activePrograms, lineContexts } = buildTrackerLineContexts(lines);
 
     for (let i = 0; i < lines.length; i++) {
-        if (lines[i] !== 'NOT SATISFIED') continue;
+        const statusLine = parseTrackerStatusLine(lines[i]);
+        if (!statusLine || statusLine.status !== 'not_satisfied') continue;
+
+        if (statusLine.title) {
+            if (statusLine.overall) continue;
+            pushRequirement(
+                requirements,
+                statusLine.title,
+                extractInlineTrackerRequirementDetails(lines, i),
+                lineContexts?.[i] || { programKind: '', programLabel: '', sectionLabel: '' }
+            );
+            continue;
+        }
 
         const { title, details, context } = findTrackerRequirementTitle(lines, i, lineContexts);
         if (title) {

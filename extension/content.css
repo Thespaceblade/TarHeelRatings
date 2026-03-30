@@ -684,6 +684,12 @@
     justify-content: flex-start;
 }
 
+.thr-class-search-tour-panel__actions {
+    margin-top: 18px;
+    display: flex;
+    justify-content: flex-start;
+}
+
 .thr-dashboard-tour-panel__ghost {
     border: 1px solid rgba(19, 41, 75, 0.10);
     border-radius: 999px;
@@ -700,6 +706,25 @@
     background: #f3f6fa;
     border-color: rgba(75, 156, 211, 0.32);
     color: #0f2240;
+}
+
+.thr-class-search-tour-panel__done {
+    border: 1px solid rgba(19, 41, 75, 0.12);
+    border-radius: 999px;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, #4B9CD3, #2f7ab3);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    box-shadow: 0 8px 18px rgba(75, 156, 211, 0.22);
+}
+
+.thr-class-search-tour-panel__done:hover {
+    background: linear-gradient(180deg, #5aa8dc, #3b86be);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(75, 156, 211, 0.28);
 }
 
 @keyframes thr-guide-panel-enter {

@@ -336,6 +336,7 @@ function processProfessors() {
 const ENABLE_DASHBOARD_WELCOME = true;
 const DASHBOARD_WELCOME_STORAGE_KEY = 'thr_dashboard_release_seen';
 const FEATURE_TUTORIAL_STORAGE_KEY = 'thr_feature_tutorial_step';
+const FEATURE_TUTORIAL_CLOSED_STORAGE_KEY = 'thr_feature_tutorial_closed';
 
 const DASHBOARD_RELEASE = {
     version: '2.0',
@@ -365,6 +366,7 @@ let featureTutorialState = {
     loaded: false,
     loading: false,
     step: '',
+    closed: false,
     waiters: [],
 };
 let dashboardGuideProgress = {
@@ -565,10 +567,11 @@ function loadFeatureTutorialState(callback) {
     if (featureTutorialState.loading) return;
 
     featureTutorialState.loading = true;
-    safeStorageGet([FEATURE_TUTORIAL_STORAGE_KEY], (data) => {
+    safeStorageGet([FEATURE_TUTORIAL_STORAGE_KEY, FEATURE_TUTORIAL_CLOSED_STORAGE_KEY], (data) => {
         featureTutorialState.loaded = true;
         featureTutorialState.loading = false;
         featureTutorialState.step = data?.[FEATURE_TUTORIAL_STORAGE_KEY] || '';
+        featureTutorialState.closed = !!data?.[FEATURE_TUTORIAL_CLOSED_STORAGE_KEY];
         flushFeatureTutorialWaiters();
     });
 }
@@ -587,10 +590,33 @@ function clearFeatureTutorialStep() {
     setFeatureTutorialStep('');
 }
 
+function setFeatureTutorialClosed(closed) {
+    featureTutorialState.loaded = true;
+    featureTutorialState.closed = !!closed;
+    if (closed) {
+        safeStorageSet({ [FEATURE_TUTORIAL_CLOSED_STORAGE_KEY]: true });
+    } else {
+        safeStorageRemove(FEATURE_TUTORIAL_CLOSED_STORAGE_KEY);
+    }
+}
+
+function clearFeatureTutorialClosed() {
+    setFeatureTutorialClosed(false);
+}
+
+function closeFeatureTutorialSession() {
+    setFeatureTutorialClosed(true);
+    clearFeatureTutorialStep();
+    removeDashboardTutorial();
+    getTrackerPanel()?.remove();
+    getTrackerGuide()?.remove();
+}
+
 function syncFeatureTutorialStepFromStorage(callback) {
-    safeStorageGet([FEATURE_TUTORIAL_STORAGE_KEY], (data) => {
+    safeStorageGet([FEATURE_TUTORIAL_STORAGE_KEY, FEATURE_TUTORIAL_CLOSED_STORAGE_KEY], (data) => {
         featureTutorialState.loaded = true;
         featureTutorialState.step = data?.[FEATURE_TUTORIAL_STORAGE_KEY] || '';
+        featureTutorialState.closed = !!data?.[FEATURE_TUTORIAL_CLOSED_STORAGE_KEY];
         if (callback) callback();
     });
 }
@@ -613,6 +639,7 @@ function startFeatureTutorial() {
     dashboardWelcomeForceOpen = false;
     markDashboardWelcomeSeen();
     removeDashboardWelcomeModal();
+    clearFeatureTutorialClosed();
     setFeatureTutorialStep('dashboard_academics');
     window.setTimeout(() => {
         processDashboardTutorial();
@@ -630,6 +657,7 @@ function removeDashboardWelcomeModal() {
 function dismissDashboardWelcomeModal() {
     dashboardWelcomeForceOpen = false;
     markDashboardWelcomeSeen();
+    closeFeatureTutorialSession();
     removeDashboardWelcomeModal();
 }
 
@@ -1033,8 +1061,7 @@ function ensureDashboardTourPanel() {
     `;
 
     panel.querySelector('#thr-dashboard-tour-skip').addEventListener('click', () => {
-        clearFeatureTutorialStep();
-        removeDashboardTutorial();
+        closeFeatureTutorialSession();
     });
 
     document.body.appendChild(panel);
@@ -1495,6 +1522,10 @@ function setDashboardTourPanelState(options) {
 }
 
 function processDashboardTutorial() {
+    if (featureTutorialState.closed) {
+        removeDashboardTutorial();
+        return;
+    }
     loadFeatureTutorialState(() => {
         const tutorialStep = featureTutorialState.step || '';
         const isDashboardStep = /^dashboard_/.test(tutorialStep);
@@ -1812,7 +1843,7 @@ function bindFeatureTutorialNavigationTarget(target, step, nextStep) {
             setFeatureTutorialStep(nextStep);
         } else {
             markTrackerTutorialCompleted();
-            clearFeatureTutorialStep();
+            closeFeatureTutorialSession();
         }
         queueTrackerSyncPanelRefresh(false);
     };
@@ -2211,7 +2242,7 @@ function getTrackerGuideState(signals, status, reqs, error) {
             eyebrow: 'Needs Attention',
             title: 'That sync took a wrong turn',
             detail: error || 'Open the tracker page again and try syncing once everything is visible.',
-            hint: 'No PDF detour here. This only reads what is visible on the tracker page.',
+            hint: 'This only reads what is visible on the tracker page.',
             showButton: true,
             buttonLabel: 'Try Again',
             tone: 'error',
@@ -2226,7 +2257,7 @@ function getTrackerGuideState(signals, status, reqs, error) {
         title: tutorialActive ? 'Click Sync Requirements' : 'Final click: sync it',
         detail: tutorialActive
             ? 'Everything is open. Click Sync Requirements to save the missing requirements from this page.'
-            : 'Everything looks open. Click Sync Requirements and I’ll pull the missing requirements from this page.',
+            : 'Everything looks open. Click Sync Requirements to pull the missing requirements from this page.',
         hint: tutorialActive ? '' : 'This reads the tracker page itself.',
         showButton: true,
         buttonLabel: 'Sync Requirements',
@@ -2234,6 +2265,10 @@ function getTrackerGuideState(signals, status, reqs, error) {
 }
 
 function refreshTrackerSyncPanel() {
+    if (featureTutorialState.closed && /^tracker_/.test(featureTutorialState.step || '')) {
+        clearFeatureTutorialStep();
+    }
+
     if (/^(dashboard_|tracker_class_)/.test(featureTutorialState.step || '')) {
         getTrackerPanel()?.remove();
         getTrackerGuide()?.remove();
@@ -2462,6 +2497,12 @@ addSafeStorageChangeListener((changes, namespace) => {
     if (changes[FEATURE_TUTORIAL_STORAGE_KEY]) {
         featureTutorialState.loaded = true;
         featureTutorialState.step = changes[FEATURE_TUTORIAL_STORAGE_KEY].newValue || '';
+        processDashboardTutorial();
+        queueTrackerSyncPanelRefresh(false);
+    }
+    if (changes[FEATURE_TUTORIAL_CLOSED_STORAGE_KEY]) {
+        featureTutorialState.loaded = true;
+        featureTutorialState.closed = !!changes[FEATURE_TUTORIAL_CLOSED_STORAGE_KEY].newValue;
         processDashboardTutorial();
         queueTrackerSyncPanelRefresh(false);
     }
