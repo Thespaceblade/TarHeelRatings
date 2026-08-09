@@ -622,19 +622,23 @@
         cardContainer.setAttribute('role', 'listbox');
         cardContainer.setAttribute('aria-label', 'Shopping cart classes');
 
+        const col = (typeof thrGetEnrollmentColumns === 'function')
+            ? thrGetEnrollmentColumns(grid)
+            : { code: 0, description: 1, days: 2, start: 3, end: 4, instructor: 5, units: 6, status: 7 };
+
         dataRows.forEach((row, index) => {
             const rowId = index;
             const cells = row.querySelectorAll('[role="gridcell"], [role="rowheader"]');
             const ct = idx => (cells[idx]?.textContent || '').trim();
 
-            const { code: classCode, section } = parseClassInfo(ct(0));
-            const description = ct(1) || 'Untitled Course';
-            const daysRaw = ct(2);
-            const startTime = ct(3);
-            const endTime = ct(4);
-            const instructorCell = cells[5] || null;
-            const units = (cells[6]?.textContent || '').trim();
-            const statusRaw = ct(7);
+            const { code: classCode, section } = parseClassInfo(ct(col.code));
+            const description = ct(col.description) || 'Untitled Course';
+            const daysRaw = ct(col.days);
+            const startTime = ct(col.start);
+            const endTime = ct(col.end);
+            const instructorCell = cells[col.instructor] || null;
+            const units = (cells[col.units]?.textContent || '').trim();
+            const statusRaw = ct(col.status);
 
             const days = formatDays(daysRaw);
             const cap = getCapacityInfo(statusRaw);

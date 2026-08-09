@@ -177,74 +177,301 @@ function parseInstructors(raw) {
     return results;
 }
 
+/* ── DOM text helpers ── */
+
+/**
+ * Read the visible text of an element, stripping screen-reader-only and
+ * aria-hidden duplicates that ConnectCarolina renders alongside the visible
+ * value (these are what caused the doubled "Name Name" in earlier probes).
+ */
+function visibleTextOf(el) {
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('.sr-only, [aria-hidden="true"]').forEach(x => x.remove());
+    return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * ConnectCarolina renders a visible value plus a screen-reader duplicate, so a
+ * raw scrape can yield "Kevin Irakoze Kevin Irakoze". If the token list is an
+ * exact two-half repetition, collapse it back to a single copy.
+ */
+function dedupeName(str) {
+    const s = (str || '').replace(/\s+/g, ' ').trim();
+    if (!s) return s;
+    const parts = s.split(' ');
+    if (parts.length >= 2 && parts.length % 2 === 0) {
+        const half = parts.length / 2;
+        if (parts.slice(0, half).join(' ') === parts.slice(half).join(' ')) {
+            return parts.slice(0, half).join(' ');
+        }
+    }
+    return s;
+}
+
+// Other CX field labels that must NOT be swallowed into the instructor value.
+const CX_OTHER_FIELD_LABELS = /\b(Section|Session|Units?|Status|Campus|Instruction\s+Mode|Days?|Room|Start|End|Dates?|Wait\s*list|Seats?|Component|Career|Number|Attribute|Enrollment)\b\s*:/i;
+
+/**
+ * Map the ConnectCarolina "Enrollment_Classes" CX grid columns to cell indexes
+ * by reading the header row labels, falling back to the known CX order when a
+ * header can't be matched. Shared with reskin.js (same content-script scope).
+ * Returns { code, description, days, start, end, instructor, units, status }.
+ */
+function thrGetEnrollmentColumns(grid) {
+    const fallback = {
+        code: 0, description: 1, days: 2, start: 3,
+        end: 4, instructor: 5, units: 6, status: 7,
+    };
+    const map = Object.assign({}, fallback);
+    if (!grid) return map;
+
+    const rows = grid.querySelectorAll('[role="row"]');
+    if (!rows.length) return map;
+
+    const headers = rows[0].querySelectorAll('[role="columnheader"]');
+    if (!headers.length) return map;
+
+    headers.forEach((h, i) => {
+        const t = (h.textContent || '').trim().toUpperCase();
+        if (!t) return;
+        if (t.includes('INSTRUCTOR')) map.instructor = i;
+        else if (t.includes('UNIT')) map.units = i;
+        else if (t.includes('DESC')) map.description = i;
+        else if (t.includes('CLASS')) map.code = i;
+        else if (t.includes('DAY')) map.days = i;
+        else if (t.includes('START')) map.start = i;
+        else if (t.includes('END')) map.end = i;
+        else if (t.includes('STATUS')) map.status = i;
+    });
+
+    return map;
+}
+
+/* ── Instructor target collectors ── */
+
+/**
+ * A "target" describes one instructor cell/value to inject into:
+ *   { host, rawName, mode, hideEls?, appendTo?, labelText?, markEmpty? }
+ * - mode 'replace'         : hide hideEls, append badge wrapper to appendTo (classic + cart)
+ * - mode 'replace-content' : clear host, keep optional labelText, render badges (CX cards)
+ */
+
+// 1. Classic PeopleSoft table (kept as a harmless fallback for legacy pages).
+function collectClassicTargets() {
+    const targets = [];
+    document.querySelectorAll('td[id$="_INSTRUCTOR"] span[title]').forEach(span => {
+        const container = span.closest('[role="gridcell"]') || span.parentElement;
+        if (!container) return;
+        const hideEls = [span, ...container.querySelectorAll('.sr-only, [aria-hidden="true"]')];
+        targets.push({
+            host: container,
+            appendTo: container,
+            hideEls,
+            mode: 'replace',
+            rawName: (span.getAttribute('title') || span.textContent || '').trim(),
+        });
+    });
+    return targets;
+}
+
+// 2. Shopping Cart CX grid — resolve the instructor column by header label.
+function collectCartTargets() {
+    const targets = [];
+    const cartGrid = document.querySelector('[aria-label="Enrollment_Classes"]');
+    if (!cartGrid) return targets;
+
+    const instrIdx = thrGetEnrollmentColumns(cartGrid).instructor;
+    const rows = cartGrid.querySelectorAll('[role="row"]');
+    rows.forEach((row, i) => {
+        if (i === 0) return; // header row
+        const cells = row.querySelectorAll('[role="gridcell"], [role="rowheader"]');
+        const cell = cells[instrIdx];
+        if (!cell) return;
+        const span = cell.querySelector('span[title]') || cell.querySelector('span');
+        if (!span) return;
+        const container = span.closest('[role="gridcell"]') || cell;
+        const hideEls = [span, ...container.querySelectorAll('.sr-only, [aria-hidden="true"]')];
+        targets.push({
+            host: container,
+            appendTo: container,
+            hideEls,
+            mode: 'replace',
+            rawName: (span.getAttribute('title') || span.textContent || '').trim(),
+        });
+    });
+    return targets;
+}
+
+/**
+ * Locate the tight "Instructor" field element inside one CX result card.
+ * Works regardless of exact markup (inline "Instructor: Name", sr-only label +
+ * bare text-node name, or label + sibling value) by:
+ *   1. matching elements whose full text (sr-only included) contains an
+ *      Instructor label followed by a name,
+ *   2. rejecting elements that also contain other CX field labels (so we don't
+ *      grab a whole meeting block),
+ *   3. choosing the smallest such element (fewest descendants).
+ * Returns { el, name, hasVisibleLabel, labelText } or null if not yet rendered.
+ */
+function findInstructorField(card) {
+    let best = null;
+    let bestDescendants = Infinity;
+
+    const candidates = card.querySelectorAll('span, p, div, dt, dd, li, small, strong');
+    for (const el of candidates) {
+        // Never inject into a screen-reader-only / hidden node (it would be
+        // invisible). Forcing selection up to a visible ancestor row is what we
+        // want; that ancestor still carries the "Instructor" label in its text.
+        if (el.classList.contains('sr-only') || el.closest('.sr-only, [aria-hidden="true"]')) continue;
+
+        const raw = (el.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!raw || raw.length > 200) continue;
+        if (!/instructors?\b/i.test(raw)) continue;
+
+        // Must have a name after the Instructor label.
+        const m = raw.match(/instructors?\s*:?\s*(.+)$/i);
+        if (!m) continue;
+        const afterLabel = m[1].trim();
+        if (!/[A-Za-z]/.test(afterLabel)) continue;      // label only, name not rendered yet
+
+        // Reject blocks that fold in other fields (Days/Room/Section/etc.).
+        if (CX_OTHER_FIELD_LABELS.test(afterLabel)) continue;
+
+        const descendants = el.getElementsByTagName('*').length;
+        if (descendants < bestDescendants) {
+            bestDescendants = descendants;
+            best = el;
+        }
+    }
+
+    if (!best) return null;
+
+    const rawFull = (best.textContent || '').replace(/\s+/g, ' ').trim();
+    const visible = visibleTextOf(best);
+    const hasVisibleLabel = /^instructors?\b/i.test(visible);
+
+    // Prefer the visible text (sr-only dupe already stripped) for the name.
+    let name = visible.replace(/^\s*instructors?\s*:?\s*/i, '').trim();
+    if (!name) {
+        const fm = rawFull.match(/instructors?\s*:?\s*(.+)$/i);
+        name = fm ? fm[1].trim() : '';
+    }
+    name = dedupeName(name);
+
+    const labelMatch = rawFull.match(/^\s*(instructors?\s*:?)/i);
+    const labelText = (labelMatch ? labelMatch[1] : 'Instructor:') + ' ';
+
+    return { el: best, name, hasVisibleLabel, labelText };
+}
+
+// 3. Modern CX Class Search / Browse result cards — find the Instructor field
+//    inside each result card (no dependency on hashed cx-jss* classes) and
+//    replace its content with the rating badge(s).
+function collectClassSearchTargets() {
+    const targets = [];
+    const cards = document.querySelectorAll('[class*="MuiCard-root"]');
+    if (!cards.length) return targets;
+
+    cards.forEach(card => {
+        if (card.dataset.thrCsDone) return;
+
+        const field = findInstructorField(card);
+        if (!field) return;               // not rendered yet; retry on next scan
+
+        card.dataset.thrCsDone = '1';
+        targets.push({
+            host: field.el,
+            mode: 'replace-content',
+            labelText: field.hasVisibleLabel ? field.labelText : '',
+            rawName: field.name,
+            markEmpty: true,
+        });
+    });
+    return targets;
+}
+
+/* ── Injection ── */
+
+function injectTarget(t) {
+    const host = t.host;
+    if (!host || host.dataset.tarheelProcessed) return;
+
+    const parsedList = parseInstructors(t.rawName);
+    if (!parsedList || parsedList.length === 0) {
+        // Staff / TBA / empty — mark done so we don't rescan this node forever.
+        if (t.markEmpty) host.dataset.tarheelProcessed = 'true';
+        return;
+    }
+
+    host.dataset.tarheelProcessed = 'true';
+
+    const multiWrapper = document.createElement('div');
+    multiWrapper.className = 'thr-multi-wrapper';
+
+    parsedList.forEach(parsed => {
+        const profWrapper = document.createElement('div');
+        profWrapper.textContent = parsed.display;
+        profWrapper.style.fontSize = 'inherit';
+        multiWrapper.appendChild(profWrapper);
+
+        try {
+            chrome.runtime.sendMessage({ professorName: parsed.search }, (response) => {
+                if (chrome.runtime.lastError) {
+                    profWrapper.textContent = parsed.display;
+                    return;
+                }
+                if (response && response.success) {
+                    injectOverview(profWrapper, response.data, parsed.display);
+                } else {
+                    injectNotFound(profWrapper, parsed.display);
+                }
+            });
+        } catch (e) {
+            profWrapper.textContent = parsed.display;
+        }
+    });
+
+    if (t.mode === 'replace-content') {
+        // Own the field element's rendering: keep an optional visible label,
+        // then render the badge(s) in place of the original name text/dupe.
+        host.textContent = '';
+        if (t.labelText) host.appendChild(document.createTextNode(t.labelText));
+        host.appendChild(multiWrapper);
+    } else {
+        (t.hideEls || []).forEach(el => { if (el) el.style.display = 'none'; });
+        (t.appendTo || host).appendChild(multiWrapper);
+    }
+}
+
 /**
  * Scan the page for instructor name elements and inject ratings.
  */
 function processProfessors() {
-    // 1. Class Search page (table-based)
-    const classSearchCells = document.querySelectorAll('td[id$="_INSTRUCTOR"] span[title]');
-    
-    // 2. Shopping Cart / Schedule page (grid-based)
-    const shoppingCartCells = document.querySelectorAll(
-        'div[aria-label="Enrollment_Classes"] div[role="row"] div[role="gridcell"]:nth-child(6) span'
-    );
+    const targets = [
+        ...collectClassicTargets(),
+        ...collectCartTargets(),
+        ...collectClassSearchTargets(),
+    ];
+    targets.forEach(injectTarget);
+}
 
-    const allCells = [...classSearchCells, ...shoppingCartCells];
+/* ── Bootstrap ── */
 
-    allCells.forEach(spanElement => {
-        const container = spanElement.closest('[role="gridcell"]') || spanElement.parentElement;
-        if (!container || container.dataset.tarheelProcessed) return;
-
-        // Get the name from title attr or text content
-        const rawName = (spanElement.getAttribute('title') || spanElement.textContent).trim();
-        const parsedList = parseInstructors(rawName);
-        if (!parsedList || parsedList.length === 0) return;
-
-        container.dataset.tarheelProcessed = 'true';
-
-        // Hide the original content and add our wrapper
-        spanElement.style.display = 'none';
-        // Also hide any sr-only duplicates and aria-hidden divs
-        const siblings = container.querySelectorAll('.sr-only, [aria-hidden="true"]');
-        siblings.forEach(s => s.style.display = 'none');
-
-        const multiWrapper = document.createElement('div');
-        multiWrapper.className = 'thr-multi-wrapper';
-
-        parsedList.forEach((parsed, index) => {
-            const profWrapper = document.createElement('div');
-            profWrapper.textContent = parsed.display;
-            profWrapper.style.fontSize = 'inherit';
-            multiWrapper.appendChild(profWrapper);
-
-            try {
-                chrome.runtime.sendMessage({ professorName: parsed.search }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        profWrapper.textContent = parsed.display;
-                        return;
-                    }
-                    if (response && response.success) {
-                        injectOverview(profWrapper, response.data, parsed.display);
-                    } else {
-                        injectNotFound(profWrapper, parsed.display);
-                    }
-                });
-            } catch (e) {
-                profWrapper.textContent = parsed.display;
-            }
-        });
-
-        container.appendChild(multiWrapper);
-    });
+function debounce(fn, wait) {
+    let timer = null;
+    return function () {
+        clearTimeout(timer);
+        timer = setTimeout(fn, wait);
+    };
 }
 
 // Run immediately
 processProfessors();
 
-// Watch for dynamic changes (pagination, navigation)
-const observer = new MutationObserver(() => {
-    processProfessors();
-});
+// Watch for dynamic changes (pagination, navigation, CX re-renders).
+// Debounced because CX result pages have very large card trees.
+const scheduleScan = debounce(processProfessors, 150);
+const observer = new MutationObserver(scheduleScan);
 
 observer.observe(document.body, {
     childList: true,
