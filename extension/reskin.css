@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TarHeelRatings – Shopping Cart Reskin (content area only)
    Scoped under .thr-reskin. Does NOT modify sidebar or navigation.
+   Flat marketing language: 8px radius, hairline borders, no clay glow.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── 0. Custom Properties ── */
@@ -8,28 +9,33 @@
     --thr-carolina-blue: #4B9CD3;
     --thr-carolina-blue-dark: #13294B;
     --thr-carolina-blue-light: #7DB8E0;
-    /* Claymorphism palette (Tar Heel blue-forward, matte/pastel) */
-    --thr-bg-primary: #eef5fb;
+
+    --thr-bg-primary: #ffffff;
     --thr-bg-card: #ffffff;
-    --thr-bg-card-2: #fcfcfc;
-    --thr-surface-blue: rgba(75, 156, 211, 0.10);
-    --thr-surface-blue-2: rgba(75, 156, 211, 0.16);
-    --thr-text-primary: #1a1a2e;
-    --thr-text-secondary: #5a6178;
-    --thr-text-muted: #8e95a9;
-    --thr-border: rgba(19, 41, 75, 0.10);
+    --thr-bg-card-2: #f8f9fc;
+    --thr-surface-blue: rgba(75, 156, 211, 0.08);
+    --thr-surface-blue-2: rgba(75, 156, 211, 0.12);
+    --thr-text-primary: #1c2740;
+    --thr-text-secondary: #62708a;
+    --thr-text-muted: #8a93a8;
+    --thr-border: #dddfea;
 
-    /* Clay shadows: double (outer + inner) */
-    --thr-shadow-sm: 0 10px 22px rgba(19, 41, 75, 0.10);
-    --thr-shadow-md: 0 14px 30px rgba(19, 41, 75, 0.12);
-    --thr-shadow-lg: 0 22px 44px rgba(19, 41, 75, 0.14);
-    --thr-shadow-inset: inset 0 2px 0 rgba(255, 255, 255, 0.85), inset 0 -6px 10px rgba(19, 41, 75, 0.08);
-    --thr-shadow-inset-soft: inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -3px 6px rgba(19, 41, 75, 0.06);
+    --thr-btn-radius: 8px;
+    --thr-btn-border: #dddfea;
+    --thr-btn-navy: #1f3557;
+    --thr-btn-navy-hover: #253d62;
 
-    --thr-radius: 18px;
-    --thr-radius-sm: 14px;
-    --thr-radius-xs: 10px;
-    --thr-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --thr-radius: 8px;
+    --thr-radius-sm: 8px;
+    --thr-radius-xs: 8px;
+    --thr-transition: 0.15s ease;
+
+    /* Kept as transparent no-ops so older rules don't reintroduce glow */
+    --thr-shadow-sm: none;
+    --thr-shadow-md: none;
+    --thr-shadow-lg: none;
+    --thr-shadow-inset: none;
+    --thr-shadow-inset-soft: none;
 }
 
 
@@ -40,25 +46,27 @@
 
 /* ── 2. Page Title ── */
 .thr-reskin h1 {
-    color: var(--thr-carolina-blue-dark) !important;
+    color: var(--thr-btn-navy) !important;
     font-weight: 800 !important;
     letter-spacing: -0.02em !important;
 }
 
 
-/* ── 3. Action Buttons ── */
+/* ── 3. Action Buttons ──
+   Flat marketing / kebab language: 8px radius, hairline border, no clay shadows */
 .thr-reskin .MuiButton-root:not([class*="text"]),
 .thr-reskin [class*="MuiButton-root"]:not([class*="text"]),
 .thr-reskin .cx-MuiButton-root:not([class*="text"]) {
-    border-radius: 999px !important;
-    font-weight: 600 !important;
+    border-radius: var(--thr-btn-radius) !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
     text-transform: none !important;
-    padding: 0 18px !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    transition: all var(--thr-transition) !important;
-    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.10) !important;
-    border: 1px solid rgba(19, 41, 75, 0.08) !important;
+    padding: 0 16px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+    box-shadow: none !important;
+    border: 1px solid var(--thr-btn-border) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -66,7 +74,9 @@
     line-height: 1 !important;
     cursor: pointer !important;
     white-space: nowrap !important;
+    background: #ffffff !important;
     background-image: none !important;
+    color: var(--thr-btn-navy) !important;
     overflow: hidden !important;
     position: relative !important;
 }
@@ -102,7 +112,7 @@
 
 .thr-reskin .MuiButton-root:not([class*="text"]):active,
 .thr-reskin .cx-MuiButton-root:not([class*="text"]):active {
-    box-shadow: inset 0 2px 6px rgba(19, 41, 75, 0.18), 0 4px 10px rgba(19, 41, 75, 0.06) !important;
+    box-shadow: none !important;
 }
 
 .thr-reskin .MuiButton-root:not([class*="text"]):focus-visible,
@@ -113,61 +123,65 @@
 
 .thr-reskin .MuiButton-root[class*="containedPrimary"],
 .thr-reskin .cx-MuiButton-root[class*="Primary"] {
-    background: var(--thr-carolina-blue-dark) !important;
-    color: white !important;
+    background: var(--thr-btn-navy) !important;
+    border-color: var(--thr-btn-navy) !important;
+    color: #ffffff !important;
 }
 
 .thr-reskin .MuiButton-root[class*="containedPrimary"]:hover,
 .thr-reskin .cx-MuiButton-root[class*="Primary"]:hover {
-    background: #0d1e3a !important;
+    background: var(--thr-btn-navy-hover) !important;
+    border-color: var(--thr-btn-navy-hover) !important;
 }
 
 .thr-reskin .MuiButton-root[class*="containedPrimary"]:active,
 .thr-reskin .cx-MuiButton-root[class*="Primary"]:active {
-    background: #0a172e !important;
-    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(19, 41, 75, 0.06) !important;
+    background: #1a2d4a !important;
+    border-color: #1a2d4a !important;
+    box-shadow: none !important;
 }
 
 .thr-reskin .MuiButton-root[class*="outlinedSecondary"],
 .thr-reskin .cx-MuiButton-root[class*="Secondary"] {
-    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+    border: 1px solid rgba(185, 28, 28, 0.35) !important;
     color: #b91c1c !important;
-    background: #fffafa !important;
-    box-shadow: var(--thr-shadow-inset-soft), 0 6px 14px rgba(239, 68, 68, 0.08) !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
 }
 
 .thr-reskin .MuiButton-root[class*="outlinedSecondary"]:hover,
 .thr-reskin .cx-MuiButton-root[class*="Secondary"]:hover {
-    background: #fee2e2 !important;
+    background: #fff5f5 !important;
+    border-color: rgba(185, 28, 28, 0.55) !important;
 }
 
 .thr-reskin .MuiButton-root[class*="outlinedSecondary"]:active,
 .thr-reskin .cx-MuiButton-root[class*="Secondary"]:active {
-    background: #fecaca !important;
-    box-shadow: inset 0 3px 8px rgba(239, 68, 68, 0.12), 0 2px 6px rgba(19, 41, 75, 0.04) !important;
+    background: #fee2e2 !important;
+    box-shadow: none !important;
 }
 
 .thr-reskin .MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]),
 .thr-reskin .cx-MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]),
 .thr-reskin .cx-MuiButton-root:not([class*="Primary"]):not([class*="Secondary"]):not([class*="text"]) {
-    border: 1px solid rgba(19, 41, 75, 0.10) !important;
-    color: var(--thr-text-primary) !important;
+    border: 1px solid var(--thr-btn-border) !important;
+    color: var(--thr-btn-navy) !important;
     background: #ffffff !important;
 }
 
 .thr-reskin .MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]):hover,
 .thr-reskin .cx-MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]):hover,
 .thr-reskin .cx-MuiButton-root:not([class*="Primary"]):not([class*="Secondary"]):not([class*="text"]):hover {
-    border-color: rgba(75, 156, 211, 0.55) !important;
-    color: var(--thr-carolina-blue) !important;
-    background: #f8fafc !important;
+    border-color: #c5c9d8 !important;
+    color: var(--thr-btn-navy) !important;
+    background: #f8f9fc !important;
 }
 
 .thr-reskin .MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]):active,
 .thr-reskin .cx-MuiButton-root[class*="outlined"]:not([class*="Secondary"]):not([class*="text"]):active,
 .thr-reskin .cx-MuiButton-root:not([class*="Primary"]):not([class*="Secondary"]):not([class*="text"]):active {
-    background: #f1f5f9 !important;
-    box-shadow: inset 0 3px 8px rgba(19, 41, 75, 0.10), 0 2px 6px rgba(19, 41, 75, 0.04) !important;
+    background: #eef0f6 !important;
+    box-shadow: none !important;
 }
 
 /* Explicit Disabled State for intuitive UI */
@@ -176,34 +190,44 @@
 .thr-reskin .Mui-disabled,
 .thr-reskin .cx-Mui-disabled {
     opacity: 0.55 !important;
-    filter: grayscale(80%) !important;
+    filter: none !important;
     cursor: not-allowed !important;
     pointer-events: none !important;
-    background: #e2e8f0 !important;
-    color: #64748b !important;
-    border-color: #cbd5e1 !important;
+    background: #f1f3f8 !important;
+    color: #8a93a8 !important;
+    border-color: var(--thr-btn-border) !important;
     box-shadow: none !important;
 }
 
 
-/* ── 3b. Icon / Round Buttons ──
-   Buttons that contain only an icon (svg) – keep them circular, no bulging */
+/* ── 3b. Icon Buttons ──
+   Same flat kebab language — square corners, no circle / clay shadow */
 .thr-reskin [class*="IconButton"],
 .thr-reskin [class*="MuiIconButton"] {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
     padding: 0 !important;
-    border-radius: 50% !important;
+    border-radius: var(--thr-btn-radius) !important;
+    border: 1px solid var(--thr-btn-border) !important;
+    background: #ffffff !important;
+    color: var(--thr-btn-navy) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    box-shadow: var(--thr-shadow-inset-soft), 0 6px 14px rgba(19, 41, 75, 0.08) !important;
+    box-shadow: none !important;
+}
+
+.thr-reskin [class*="IconButton"]:hover,
+.thr-reskin [class*="MuiIconButton"]:hover {
+    background: #f8f9fc !important;
+    border-color: #c5c9d8 !important;
 }
 
 .thr-reskin [class*="IconButton"]:active,
 .thr-reskin [class*="MuiIconButton"]:active {
-    box-shadow: inset 0 2px 6px rgba(19, 41, 75, 0.18), 0 2px 6px rgba(19, 41, 75, 0.04) !important;
+    background: #eef0f6 !important;
+    box-shadow: none !important;
 }
 
 .thr-reskin [class*="IconButton"] svg,
@@ -231,35 +255,54 @@
 }
 
 
-/* ── 4. Inputs ── */
-/* Standalone search inputs (like the Shopping Cart search bar) */
+/* ── 4. Inputs ──
+   Same flat language as buttons — 8px, hairline border, no glow */
 .thr-reskin input#search,
-.thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]) {
-    border-radius: 999px !important;
-    border: 1px solid rgba(19, 41, 75, 0.10) !important;
+.thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]),
+.thr-reskin input[type="search"],
+.thr-reskin select {
+    border-radius: var(--thr-btn-radius) !important;
+    border: 1px solid var(--thr-btn-border) !important;
     background: #ffffff !important;
-    transition: all var(--thr-transition) !important;
-    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.08) !important;
+    color: var(--thr-btn-navy) !important;
+    transition: border-color 0.15s ease, background 0.15s ease !important;
+    box-shadow: none !important;
     padding: 0 14px;
-    height: 38px;
+    height: 40px;
+    min-height: 40px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.thr-reskin input#search:hover,
+.thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]):hover,
+.thr-reskin input[type="search"]:hover,
+.thr-reskin select:hover {
+    border-color: #c5c9d8 !important;
+    background: #f8f9fc !important;
 }
 
 .thr-reskin input#search:focus,
-.thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]):focus {
-    border-color: rgba(75, 156, 211, 0.65) !important;
-    box-shadow: var(--thr-shadow-inset-soft), 0 0 0 4px rgba(75, 156, 211, 0.18), 0 14px 30px rgba(19, 41, 75, 0.10) !important;
-    outline: none !important;
+.thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]):focus,
+.thr-reskin input[type="search"]:focus,
+.thr-reskin select:focus {
+    border-color: var(--thr-carolina-blue) !important;
+    box-shadow: none !important;
+    outline: 2px solid rgba(75, 156, 211, 0.25) !important;
+    outline-offset: 1px !important;
+    background: #ffffff !important;
 }
 
 /* Material-UI Complex Inputs (Autocomplete, Select, TextFields) */
 .thr-reskin .cx-MuiInputBase-root,
 .thr-reskin .MuiInputBase-root {
-    border-radius: 999px !important;
+    border-radius: var(--thr-btn-radius) !important;
     background: #ffffff !important;
-    border: 1px solid rgba(19, 41, 75, 0.10) !important;
-    transition: all var(--thr-transition) !important;
-    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.08) !important;
-    min-height: 38px !important;
+    border: 1px solid var(--thr-btn-border) !important;
+    transition: border-color 0.15s ease, background 0.15s ease !important;
+    box-shadow: none !important;
+    min-height: 40px !important;
     padding-left: 14px !important;
     padding-right: 14px !important;
 }
@@ -276,15 +319,17 @@
 
 .thr-reskin .cx-MuiInputBase-root:hover,
 .thr-reskin .MuiInputBase-root:hover {
-    border-color: rgba(75, 156, 211, 0.35) !important;
+    border-color: #c5c9d8 !important;
+    background: #f8f9fc !important;
 }
 
 .thr-reskin .cx-MuiInputBase-root.cx-Mui-focused,
 .thr-reskin .MuiInputBase-root.Mui-focused,
 .thr-reskin .cx-MuiInputBase-root.cx-Mui-focused:hover,
 .thr-reskin .MuiInputBase-root.Mui-focused:hover {
-    border-color: rgba(75, 156, 211, 0.65) !important;
-    box-shadow: var(--thr-shadow-inset-soft), 0 0 0 4px rgba(75, 156, 211, 0.18), 0 14px 30px rgba(19, 41, 75, 0.10) !important;
+    border-color: var(--thr-carolina-blue) !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
 }
 
 /* Ensure inner inputs stay transparent and don't double-render the styles */
@@ -303,6 +348,12 @@
     outline: none !important;
 }
 
+/* Inline / helper links in content */
+.thr-reskin a:not(.thr-link):not([class*="MuiButton"]):not([class*="cx-MuiButton"]) {
+    color: var(--thr-carolina-blue);
+    font-weight: 600;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    VIEW TOGGLE
@@ -312,39 +363,40 @@
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    background: #f8fafc;
-    border-radius: 999px;
-    padding: 5px;
+    background: #ffffff;
+    border-radius: var(--thr-btn-radius, 8px);
+    padding: 3px;
     margin-right: 12px;
-    border: 1px solid rgba(19, 41, 75, 0.10);
-    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.10);
+    border: 1px solid var(--thr-btn-border, #dddfea);
+    box-shadow: none;
 }
 
 .thr-toggle-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 28px;
+    width: 34px;
+    height: 32px;
     border: none !important;
     background: transparent !important;
-    border-radius: 999px !important;
+    border-radius: 6px !important;
     cursor: pointer;
-    color: rgba(19, 41, 75, 0.58) !important;
-    transition: all 0.15s ease !important;
+    color: rgba(31, 53, 87, 0.55) !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
     padding: 0 !important;
     min-width: 0 !important;
+    box-shadow: none !important;
 }
 
 .thr-toggle-btn:hover {
-    color: var(--thr-carolina-blue) !important;
-    background: rgba(75, 156, 211, 0.12) !important;
+    color: var(--thr-btn-navy, #1f3557) !important;
+    background: #f8f9fc !important;
 }
 
 .thr-toggle-btn.thr-toggle-active {
-    background: #f1f5f9 !important;
-    color: var(--thr-carolina-blue-dark) !important;
-    box-shadow: var(--thr-shadow-inset-soft), 0 12px 26px rgba(19, 41, 75, 0.12) !important;
+    background: #eef0f6 !important;
+    color: var(--thr-btn-navy, #1f3557) !important;
+    box-shadow: none !important;
 }
 
 
@@ -377,48 +429,46 @@
    These break position:fixed on the TarHeelRatings tooltip inside. */
 .thr-card {
     background: var(--thr-bg-card);
-    border: 1px solid rgba(19, 41, 75, 0.10);
+    border: 1px solid var(--thr-border);
     border-radius: var(--thr-radius);
     display: flex;
     flex-direction: column;
-    transition: box-shadow var(--thr-transition), border-color var(--thr-transition), background var(--thr-transition);
-    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-sm);
+    transition: border-color var(--thr-transition), background var(--thr-transition);
+    box-shadow: none;
     position: relative;
     cursor: pointer;
     min-width: 0;
 }
 
 .thr-card:hover {
-    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-lg);
-    border-color: rgba(75, 156, 211, 0.38);
+    box-shadow: none;
+    border-color: #c5c9d8;
 }
 
 
-/* ── Card Selected State ──
-   Uses outline instead of box-shadow ring so the card doesn't grow. */
+/* ── Card Selected State ── */
 .thr-card-selected {
-    border-color: rgba(75, 156, 211, 0.65) !important;
+    border-color: var(--thr-carolina-blue) !important;
     background: #f8fafc;
-    outline: 3px solid rgba(75, 156, 211, 0.22);
-    outline-offset: -1px;
-    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-sm);
+    outline: none;
+    box-shadow: none;
 }
 
 .thr-card-selected:hover {
-    outline-color: rgba(75, 156, 211, 0.30);
-    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-lg);
+    border-color: var(--thr-carolina-blue) !important;
+    box-shadow: none;
 }
 
 .thr-card-selected .thr-card-header {
-    background: rgba(75, 156, 211, 0.10);
+    background: #f1f5f9;
 }
 
 .thr-card-selected .thr-card-footer {
-    background: rgba(75, 156, 211, 0.08);
+    background: #f1f5f9;
 }
 
 .thr-card-selected .thr-card-select-label {
-    color: var(--thr-carolina-blue);
+    color: var(--thr-btn-navy);
     font-weight: 600;
 }
 
@@ -427,7 +477,7 @@
 .thr-card:focus-visible {
     outline: 2px solid var(--thr-carolina-blue);
     outline-offset: 2px;
-    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-md);
+    box-shadow: none;
 }
 
 .thr-card:focus:not(:focus-visible) {
@@ -449,30 +499,33 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: auto !important;
-    padding: 3px 10px !important;
-    border-radius: 20px !important;
-    background: var(--thr-carolina-blue) !important;
-    color: white !important;
-    font-size: 11px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 12px !important;
+    border-radius: var(--thr-btn-radius, 8px) !important;
+    background: var(--thr-btn-navy, #1f3557) !important;
+    color: #ffffff !important;
+    font-size: 12px !important;
     line-height: 1.2 !important;
     font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.02em !important;
-    border: none !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    border: 1px solid var(--thr-btn-navy, #1f3557) !important;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(75, 156, 211, 0.25) !important;
-    transition: all 0.15s ease;
+    box-shadow: none !important;
+    transition: background 0.15s ease, border-color 0.15s ease;
     white-space: nowrap !important;
 }
 
 .thr-card-btn-direct:hover {
-    background: var(--thr-carolina-blue-dark) !important;
-    transform: translateY(-1px);
+    background: var(--thr-btn-navy-hover, #253d62) !important;
+    border-color: var(--thr-btn-navy-hover, #253d62) !important;
+    transform: none;
 }
 
 .thr-card-btn-direct:active {
-    transform: translateY(0);
+    background: #1a2d4a !important;
+    transform: none;
 }
 
 .thr-card-kebab-wrap {
@@ -485,25 +538,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     padding: 0 !important;
-    border: 1px solid rgba(19, 41, 75, 0.12) !important;
-    border-radius: 6px !important;
-    background: white !important;
-    color: var(--thr-carolina-blue-dark) !important;
+    border: 1px solid var(--thr-btn-border, #dddfea) !important;
+    border-radius: var(--thr-btn-radius, 8px) !important;
+    background: #ffffff !important;
+    color: var(--thr-btn-navy, #1f3557) !important;
     cursor: pointer;
-    transition: all 0.15s ease;
-    box-shadow: var(--thr-shadow-inset-soft) !important;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    box-shadow: none !important;
 }
 
 .thr-card-kebab-btn:hover {
-    background: rgba(75, 156, 211, 0.15) !important;
-    color: var(--thr-carolina-blue) !important;
+    background: #f8f9fc !important;
+    border-color: #c5c9d8 !important;
+    color: var(--thr-btn-navy, #1f3557) !important;
 }
 
 .thr-card-kebab-btn:active {
-    background: rgba(75, 156, 211, 0.20) !important;
+    background: #eef0f6 !important;
 }
 
 .thr-card-kebab-menu {
@@ -514,9 +568,9 @@
     margin-top: 6px;
     min-width: 160px;
     background: #ffffff;
-    border: 1px solid rgba(19, 41, 75, 0.12);
-    border-radius: var(--thr-radius-xs);
-    box-shadow: var(--thr-shadow-inset-soft), var(--thr-shadow-md);
+    border: 1px solid var(--thr-btn-border, #dddfea);
+    border-radius: var(--thr-btn-radius, 8px);
+    box-shadow: 0 8px 24px rgba(19, 41, 75, 0.08);
     padding: 4px 0;
     z-index: 100;
 }
@@ -620,8 +674,8 @@
     justify-content: space-between;
     gap: 12px;
     padding: 10px 14px;
-    border-bottom: 1px solid rgba(19, 41, 75, 0.08);
-    background: rgba(75, 156, 211, 0.04);
+    border-bottom: 1px solid var(--thr-border);
+    background: #f8f9fc;
     border-radius: var(--thr-radius) var(--thr-radius) 0 0;
 }
 
@@ -633,7 +687,7 @@
 .thr-card-code {
     font-size: 15px;
     font-weight: 800;
-    color: var(--thr-carolina-blue-dark);
+    color: var(--thr-btn-navy);
     letter-spacing: -0.01em;
     line-height: 1.1;
 }
@@ -657,16 +711,29 @@
 .thr-card-capacity {
     font-size: 11px;
     font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 20px;
+    padding: 3px 8px;
+    border-radius: var(--thr-btn-radius);
+    border: 1px solid transparent;
     white-space: nowrap;
     flex-shrink: 0;
-    box-shadow: var(--thr-shadow-inset-soft);
+    box-shadow: none;
 }
 
-.thr-cap-open { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
-.thr-cap-filling { background: rgba(245, 158, 11, 0.1); color: #d97706; }
-.thr-cap-full { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+.thr-cap-open {
+    background: #f0fdf4;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+.thr-cap-filling {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fde68a;
+}
+.thr-cap-full {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
 
 
 /* ── Card Body ── */
@@ -679,6 +746,7 @@
     display: flex;
     align-items: flex-start;
     gap: 6px;
+    min-width: 0;
 }
 
 .thr-card-subject-icon {
@@ -700,13 +768,15 @@
 }
 
 .thr-card-title {
+    flex: 1;
     font-size: 14px;
     font-weight: 600;
     color: var(--thr-text-primary);
-    line-height: 1.4;
-    overflow-wrap: break-word;
-    word-break: break-word;
+    line-height: 1.35;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 
@@ -765,8 +835,8 @@
     justify-content: space-between;
     gap: 6px;
     padding: 8px 14px;
-    border-top: 1px solid rgba(19, 41, 75, 0.08);
-    background: rgba(75, 156, 211, 0.05);
+    border-top: 1px solid var(--thr-border);
+    background: #f8f9fc;
     border-radius: 0 0 var(--thr-radius) var(--thr-radius);
 }
 
@@ -781,9 +851,9 @@
 .thr-card-check input[type="checkbox"] {
     -webkit-appearance: none !important;
     appearance: none !important;
-    width: 20px !important;
-    height: 20px !important;
-    border: 2px solid var(--thr-carolina-blue) !important;
+    width: 18px !important;
+    height: 18px !important;
+    border: 1.5px solid var(--thr-btn-border) !important;
     border-radius: 4px !important;
     background: #fff !important;
     cursor: pointer !important;
@@ -794,22 +864,22 @@
     padding: 0 !important;
     top: auto !important;
     left: auto !important;
-    transition: all 0.15s ease !important;
-    box-shadow: 0 2px 5px rgba(19, 41, 75, 0.08) !important; /* Making it pop out */
+    transition: background 0.15s ease, border-color 0.15s ease !important;
+    box-shadow: none !important;
 }
 
 .thr-card-check input[type="checkbox"]:checked {
-    background: var(--thr-carolina-blue) !important;
-    border-color: var(--thr-carolina-blue) !important;
+    background: var(--thr-btn-navy) !important;
+    border-color: var(--thr-btn-navy) !important;
 }
 
 .thr-card-check input[type="checkbox"]:checked::after {
     content: '' !important;
     position: absolute !important;
-    left: 4px !important;
+    left: 5px !important;
     top: 1px !important;
-    width: 6px !important;
-    height: 11px !important;
+    width: 5px !important;
+    height: 10px !important;
     border: solid #fff !important;
     border-width: 0 2px 2px 0 !important;
     transform: rotate(45deg) !important;
@@ -817,7 +887,7 @@
 }
 
 .thr-card-check input[type="checkbox"]:hover {
-    border-color: var(--thr-carolina-blue) !important;
+    border-color: var(--thr-btn-navy) !important;
 }
 
 .thr-card-select-label {
@@ -865,8 +935,8 @@
     max-width: 600px;
     max-height: 85vh;
     border-radius: var(--thr-radius);
-    box-shadow: var(--thr-shadow-lg), inset 0 2px 0 rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(19, 41, 75, 0.12);
+    box-shadow: 0 8px 24px rgba(19, 41, 75, 0.08);
+    border: 1px solid var(--thr-border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -884,33 +954,36 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    background: #f8fafc;
-    border-bottom: 1px solid rgba(19, 41, 75, 0.08);
+    background: #f8f9fc;
+    border-bottom: 1px solid var(--thr-border);
 }
 
 .thr-modal-title {
     font-size: 16px;
     font-weight: 800;
-    color: var(--thr-carolina-blue-dark);
+    color: var(--thr-btn-navy);
     letter-spacing: -0.01em;
 }
 
 .thr-modal-close {
-    background: transparent !important;
-    border: none !important;
+    background: #ffffff !important;
+    border: 1px solid var(--thr-btn-border, #dddfea) !important;
     box-shadow: none !important;
-    color: var(--thr-text-muted) !important;
+    color: var(--thr-btn-navy, #1f3557) !important;
     cursor: pointer;
-    padding: 4px !important;
-    border-radius: 50% !important;
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    border-radius: var(--thr-btn-radius, 8px) !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .thr-modal-close:hover {
-    background: rgba(239, 68, 68, 0.1) !important;
+    background: #fff5f5 !important;
+    border-color: rgba(185, 28, 28, 0.35) !important;
     color: #ef4444 !important;
 }
 
@@ -1050,15 +1123,15 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   LIST VIEW (DATA GRID) – CLAYMORPHISM
+   LIST VIEW (DATA GRID)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Grid container */
 .thr-reskin [aria-label="Enrollment_Classes"] {
-    border-radius: var(--thr-radius) !important;
+    border-radius: var(--thr-btn-radius, 8px) !important;
     background: #ffffff !important;
-    box-shadow: var(--thr-shadow-inset), var(--thr-shadow-md) !important;
-    border: 1px solid rgba(19, 41, 75, 0.10) !important;
+    box-shadow: none !important;
+    border: 1px solid var(--thr-btn-border, #dddfea) !important;
     overflow: visible !important;
 }
 
@@ -1079,19 +1152,20 @@
     padding-bottom: 6px !important;
 }
 
-/* Data rows as pill-like clay strips */
+/* Data rows — flat bordered strips, no clay glow */
 .thr-reskin [aria-label="Enrollment_Classes"] [role="row"]:not(:first-child) {
-    background: #f1f5f9 !important;
-    border: 1px solid rgba(19, 41, 75, 0.08) !important;
-    border-radius: 14px !important;
-    box-shadow: var(--thr-shadow-inset-soft), 0 10px 22px rgba(19, 41, 75, 0.08) !important;
+    background: #ffffff !important;
+    border: 1px solid var(--thr-btn-border, #dddfea) !important;
+    border-radius: var(--thr-btn-radius, 8px) !important;
+    box-shadow: none !important;
     margin: 8px 10px !important;
     overflow: visible !important;
 }
 
 .thr-reskin [aria-label="Enrollment_Classes"] [role="row"]:not(:first-child):hover {
-    box-shadow: var(--thr-shadow-inset-soft), 0 18px 36px rgba(19, 41, 75, 0.12) !important;
-    border-color: rgba(75, 156, 211, 0.30) !important;
+    box-shadow: none !important;
+    border-color: #c5c9d8 !important;
+    background: #f8f9fc !important;
 }
 
 /* Cell padding for better breathing room */

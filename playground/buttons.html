@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConnectCarolina mock · THR visual inventory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../extension/reskin.css">
+  <link rel="stylesheet" href="../extension/content.css">
+  <style>
+    :root {
+      --cc-primary: #13294b;
+      --cc-primary-2: #1a3558;
+      --cc-blue: #4b9cd3;
+      --cc-bg: #f0f2f5;
+      --cc-sidebar: #ffffff;
+      --cc-line: #d8dde6;
+      --cc-text: #1c2740;
+      --cc-muted: #62708a;
+      --cc-font: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: var(--cc-font);
+      color: var(--cc-text);
+      background: var(--cc-bg);
+    }
+
+    /* ── Playground banner ── */
+    .pg-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 16px;
+      background: #fff8e6;
+      border-bottom: 1px solid #f0d78c;
+      font-size: 12px;
+      color: #6b5420;
+      z-index: 50;
+      position: sticky;
+      top: 0;
+    }
+
+    .pg-banner a {
+      color: #13294b;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid #dddfea;
+      background: #fff;
+      border-radius: 8px;
+      padding: 4px 10px;
+    }
+
+    /* ── CX chrome ── */
+    .cx-shell {
+      display: grid;
+      grid-template-rows: 52px 1fr;
+      height: calc(100vh - 37px);
+      min-height: 640px;
+    }
+
+    .cx-topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 16px;
+      background: var(--cc-primary);
+      color: #fff;
+    }
+
+    .cx-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .cx-brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--cc-blue);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .cx-top-search {
+      flex: 1;
+      max-width: 420px;
+      height: 34px;
+      border-radius: 8px;
+      border: none;
+      padding: 0 12px;
+      font: inherit;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .cx-top-search::placeholder { color: rgba(255, 255, 255, 0.65); }
+
+    .cx-top-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .cx-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--cc-blue);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .cx-body {
+      display: grid;
+      grid-template-columns: 248px 1fr;
+      min-height: 0;
+    }
+
+    /* ── Sidebar ── */
+    .cx-sidebar {
+      background: var(--cc-sidebar);
+      border-right: 1px solid var(--cc-line);
+      overflow-y: auto;
+      padding: 12px 0 24px;
+    }
+
+    .cx-nav-section {
+      margin-top: 10px;
+    }
+
+    .cx-nav-section-title {
+      padding: 8px 18px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--cc-muted);
+    }
+
+    .cx-nav-link {
+      display: block;
+      padding: 7px 18px;
+      font-size: 13.5px;
+      color: var(--cc-text);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+    }
+
+    .cx-nav-link:hover {
+      background: #f5f7fa;
+    }
+
+    .cx-nav-link.active {
+      background: rgba(75, 156, 211, 0.12);
+      color: var(--cc-primary);
+      font-weight: 600;
+      border-left-color: var(--cc-blue);
+    }
+
+    /* ── Main content ── */
+    .cx-main {
+      overflow: auto;
+      min-width: 0;
+    }
+
+    .cx-content {
+      padding: 18px 22px 40px;
+      max-width: 1400px;
+    }
+
+    .cx-breadcrumb {
+      font-size: 12px;
+      color: var(--cc-muted);
+      margin-bottom: 8px;
+    }
+
+    .cx-breadcrumb span { color: var(--cc-primary); font-weight: 600; }
+
+    .cx-page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .cx-page-header h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .cx-term {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--cc-muted);
+    }
+
+    .cx-term select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 28px !important;
+      font-weight: 600 !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%231f3557'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    .cx-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 0 4px;
+      border-bottom: 1px solid var(--cc-line);
+      margin-bottom: 4px;
+    }
+
+    .cx-toolbar-spacer { flex: 1; min-width: 8px; }
+
+    .cx-links {
+      display: flex;
+      gap: 14px;
+      margin: 10px 0 4px;
+      font-size: 13px;
+    }
+
+    .cx-links a {
+      color: var(--cc-blue);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .cx-links a:hover { text-decoration: underline; }
+
+    .cx-search-row {
+      margin: 10px 0 4px;
+    }
+
+    .cx-search-row input#search {
+      width: min(360px, 100%);
+    }
+
+    /* Inventory strip under the mock */
+    .pg-inventory {
+      margin-top: 36px;
+      padding-top: 24px;
+      border-top: 2px dashed #c5c9d8;
+    }
+
+    .pg-inventory > h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      text-transform: none;
+      color: var(--cc-primary);
+    }
+
+    .pg-inventory > p {
+      margin: 0 0 18px;
+      font-size: 13px;
+      color: var(--cc-muted);
+    }
+
+    .pg-block {
+      background: #fff;
+      border: 1px solid var(--cc-line);
+      border-radius: 12px;
+      padding: 16px 18px 18px;
+      margin-bottom: 14px;
+    }
+
+    .pg-block h3 {
+      margin: 0 0 4px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--cc-primary);
+    }
+
+    .pg-block .pg-desc {
+      margin: 0 0 14px;
+      font-size: 12px;
+      color: var(--cc-muted);
+    }
+
+    .pg-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .pg-row:last-child { margin-bottom: 0; }
+
+    .pg-label {
+      flex: 0 0 130px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cc-muted);
+    }
+
+    .pg-swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--cc-muted);
+      margin-right: 10px;
+    }
+
+    .pg-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid var(--cc-line);
+    }
+
+    .pg-card-mini {
+      width: 280px;
+      max-width: 100%;
+    }
+
+    .pg-kebab-open .thr-card-kebab-menu {
+      display: block;
+      position: static;
+      margin-top: 8px;
+    }
+
+    .pg-list-mock {
+      width: 100%;
+    }
+
+    .pg-list-mock [role="row"] {
+      display: grid;
+      grid-template-columns: 28px 1.1fr 1.6fr 1fr 0.7fr 0.8fr;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+    }
+
+    .pg-list-mock [role="columnheader"] {
+      font-size: 11px;
+    }
+
+    .pg-modal-inline {
+      position: relative;
+      max-width: 480px;
+      transform: none;
+      opacity: 1;
+      animation: none;
+      max-height: none;
+    }
+
+    .pg-tooltip-inline {
+      display: flex !important;
+      position: static !important;
+      pointer-events: auto;
+    }
+
+    .is-hidden { display: none !important; }
+
+    /* Mock MUI base */
+    .thr-reskin .MuiButton-root,
+    .thr-reskin .cx-MuiButton-root,
+    .thr-reskin [class*="IconButton"] {
+      font-family: inherit;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .thr-reskin [class*="IconButton"] {
+      background: #fff;
+      border: 1px solid #dddfea;
+      color: #1f3557;
+    }
+
+    @media (max-width: 900px) {
+      .cx-body { grid-template-columns: 1fr; }
+      .cx-sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="pg-banner">
+    <span>Playground mock of ConnectCarolina · styles from <code>extension/reskin.css</code> · sidebar is not restyled by THR</span>
+    <a href="#inventory">Jump to button inventory</a>
+  </div>
+
+  <div class="cx-shell">
+    <header class="cx-topbar">
+      <div class="cx-brand">
+        <span class="cx-brand-mark">CC</span>
+        ConnectCarolina
+      </div>
+      <input class="cx-top-search" type="search" placeholder="Search" aria-label="Search">
+      <div class="cx-top-right">
+        <span>Student</span>
+        <div class="cx-avatar" aria-hidden="true">JS</div>
+      </div>
+    </header>
+
+    <div class="cx-body">
+      <aside class="cx-sidebar" aria-label="Campus Experience navigation">
+        <div class="cx-nav-section">
+          <a class="cx-nav-link" href="#">Dashboard</a>
+          <a class="cx-nav-link" href="#">Schedule</a>
+        </div>
+        <div class="cx-nav-section">
+          <div class="cx-nav-section-title">Class Information</div>
+          <a class="cx-nav-link" href="#">Browse Classes</a>
+          <a class="cx-nav-link" href="#">Course Catalog</a>
+          <a class="cx-nav-link" href="#">Class Search</a>
+        </div>
+        <div class="cx-nav-section">
+          <div class="cx-nav-section-title">Enrollment</div>
+          <a class="cx-nav-link active" href="#">Shopping Cart</a>
+          <a class="cx-nav-link" href="#">Edit Enrollment</a>
+          <a class="cx-nav-link" href="#">Drop Classes</a>
+          <a class="cx-nav-link" href="#">View Wait List</a>
+          <a class="cx-nav-link" href="#">Enrollment Dates</a>
+          <a class="cx-nav-link" href="#">Swap Classes</a>
+          <a class="cx-nav-link" href="#">Schedule Builder</a>
+        </div>
+        <div class="cx-nav-section">
+          <div class="cx-nav-section-title">Academics</div>
+          <a class="cx-nav-link" href="#">Tar Heel Tracker</a>
+          <a class="cx-nav-link" href="#">Grades</a>
+          <a class="cx-nav-link" href="#">What-If</a>
+        </div>
+        <div class="cx-nav-section">
+          <div class="cx-nav-section-title">Student Accounts</div>
+          <a class="cx-nav-link" href="#">What I Owe</a>
+          <a class="cx-nav-link" href="#">View Financial Aid</a>
+        </div>
+      </aside>
+
+      <!-- THR only restyles this content area -->
+      <main class="cx-main thr-reskin" id="hcx-shopping-cart">
+        <div class="cx-content">
+          <div class="cx-breadcrumb">Enrollment / <span>Shopping Cart</span></div>
+
+          <div class="cx-page-header">
+            <h1>Shopping Cart</h1>
+            <div class="cx-term">
+              <label for="term">Term</label>
+              <select id="term">
+                <option>2026 Fall</option>
+                <option>2026 Spring</option>
+                <option>2025 Fall</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="cx-links">
+            <a href="#">Go to Schedule</a>
+            <a href="#">Add Class to cart</a>
+          </div>
+
+          <div class="cx-toolbar">
+            <div class="thr-view-toggle" role="group" aria-label="View mode">
+              <button type="button" class="thr-toggle-btn thr-toggle-active" data-view="card" title="Card view" aria-pressed="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+              </button>
+              <button type="button" class="thr-toggle-btn" data-view="list" title="List view" aria-pressed="false">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z"/></svg>
+              </button>
+            </div>
+
+            <div class="cx-toolbar-spacer"></div>
+
+            <button type="button" class="MuiButton-root MuiButton-outlined">
+              <span class="MuiButton-label">Save Selections</span>
+            </button>
+            <button type="button" class="MuiButton-root MuiButton-outlinedSecondary">
+              <span class="MuiButton-label">Delete Selected Classes</span>
+            </button>
+            <button type="button" class="MuiButton-root MuiButton-outlined">
+              <span class="MuiButton-label">Validate Selected Classes</span>
+            </button>
+            <button type="button" class="MuiButton-root MuiButton-containedPrimary" id="enroll-btn">
+              <span class="MuiButton-label">Enroll In Selected Classes</span>
+            </button>
+          </div>
+
+          <div class="cx-search-row">
+            <input id="search" type="text" placeholder="Search classes in cart">
+          </div>
+
+          <!-- Card view (THR) -->
+          <div class="thr-card-grid" id="card-grid" role="listbox" aria-label="Shopping cart classes">
+
+            <div class="thr-card thr-card-selected" tabindex="0" role="option" aria-selected="true" aria-label="COMP 560 Artificial Intelligence">
+              <div class="thr-card-header">
+                <div class="thr-card-code-wrap">
+                  <div class="thr-card-code">COMP 560</div>
+                  <div class="thr-card-section">001-LEC (12780)</div>
+                </div>
+                <div class="thr-card-header-center">
+                  <div class="thr-card-capacity thr-cap-open" title="51 of 120 seats taken">51/120</div>
+                </div>
+                <div class="thr-card-actions-wrap">
+                  <button type="button" class="thr-card-btn-direct">Select</button>
+                  <div class="thr-card-kebab-wrap">
+                    <button type="button" class="thr-card-kebab-btn" aria-label="More actions" data-kebab>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    </button>
+                    <div class="thr-card-kebab-menu">
+                      <button type="button">Delete</button>
+                      <button type="button">View details</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="thr-card-body">
+                <div class="thr-card-title-row">
+                  <div class="thr-card-title">Artificial Intelligence</div>
+                </div>
+                <div class="thr-card-schedule">
+                  <span class="thr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg></span>
+                  <span>TuTh · 5:00 pm – 6:15 pm</span>
+                </div>
+              </div>
+              <div class="thr-card-instructor">
+                <span class="thr-professor">
+                  <span class="thr-rating-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#4B9CD3"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                  </span>
+                  <a class="thr-link" href="#">Jorge Silva</a>
+                  <div class="thr-tooltip">
+                    <div class="thr-tooltip-header">Jorge Silva</div>
+                    <div class="thr-tooltip-row">
+                      <div class="thr-rating-box" style="background:#2e7d32">
+                        <div class="thr-rating-num">4.2</div>
+                        <div class="thr-rating-denom">/5</div>
+                      </div>
+                      <div class="thr-details">
+                        <span>Difficulty <strong>3.1</strong></span>
+                        <span>Would take again <strong>78%</strong></span>
+                      </div>
+                    </div>
+                    <div class="thr-meta">Based on 42 ratings</div>
+                  </div>
+                </span>
+              </div>
+              <div class="thr-card-footer">
+                <div class="thr-card-units">3 units</div>
+                <div class="thr-card-check">
+                  <label class="thr-card-select-label">
+                    <input type="checkbox" checked>
+                    Select
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="thr-card" tabindex="0" role="option" aria-selected="false" aria-label="MATH 233 Calculus III">
+              <div class="thr-card-header">
+                <div class="thr-card-code-wrap">
+                  <div class="thr-card-code">MATH 233</div>
+                  <div class="thr-card-section">002-LEC (10412)</div>
+                </div>
+                <div class="thr-card-header-center">
+                  <div class="thr-card-capacity thr-cap-filling" title="Almost full">98/110</div>
+                </div>
+                <div class="thr-card-actions-wrap">
+                  <button type="button" class="thr-card-btn-direct">Select</button>
+                </div>
+              </div>
+              <div class="thr-card-body">
+                <div class="thr-card-title-row">
+                  <div class="thr-card-title" title="Calculus of Functions of Several Variables">Calculus of Functions of Several Variables</div>
+                </div>
+                <div class="thr-card-schedule">
+                  <span class="thr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg></span>
+                  <span>MWF · 10:10 am – 11:00 am</span>
+                </div>
+              </div>
+              <div class="thr-card-instructor">
+                <span class="thr-professor">
+                  <span class="thr-rating-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#4B9CD3"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                  </span>
+                  <a class="thr-link" href="#">Jane Doe</a>
+                  <div class="thr-tooltip">
+                    <div class="thr-tooltip-header">Jane Doe</div>
+                    <div class="thr-tooltip-row">
+                      <div class="thr-rating-box" style="background:#f9a825">
+                        <div class="thr-rating-num">3.6</div>
+                        <div class="thr-rating-denom">/5</div>
+                      </div>
+                      <div class="thr-details">
+                        <span>Difficulty <strong>3.8</strong></span>
+                        <span>Would take again <strong>61%</strong></span>
+                      </div>
+                    </div>
+                    <div class="thr-meta">Based on 18 ratings</div>
+                  </div>
+                </span>
+              </div>
+              <div class="thr-card-footer">
+                <div class="thr-card-units">4 units</div>
+                <div class="thr-card-check">
+                  <label class="thr-card-select-label">
+                    <input type="checkbox">
+                    Select
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="thr-card" tabindex="0" role="option" aria-selected="false" aria-label="ENGL 105 English Composition">
+              <div class="thr-card-header">
+                <div class="thr-card-code-wrap">
+                  <div class="thr-card-code">ENGL 105</div>
+                  <div class="thr-card-section">014-LEC (11890)</div>
+                </div>
+                <div class="thr-card-header-center">
+                  <div class="thr-card-capacity thr-cap-full" title="Full">19/19</div>
+                </div>
+                <div class="thr-card-actions-wrap">
+                  <button type="button" class="thr-card-btn-direct">Waitlist</button>
+                  <div class="thr-card-kebab-wrap">
+                    <button type="button" class="thr-card-kebab-btn" aria-label="More actions" data-kebab>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    </button>
+                    <div class="thr-card-kebab-menu">
+                      <button type="button">Delete</button>
+                      <button type="button">Swap</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="thr-card-body">
+                <div class="thr-card-title-row">
+                  <div class="thr-card-title">English Composition and Rhetoric</div>
+                </div>
+                <div class="thr-card-schedule">
+                  <span class="thr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg></span>
+                  <span>TuTh · 12:30 pm – 1:45 pm</span>
+                </div>
+              </div>
+              <div class="thr-card-instructor">
+                <span class="thr-name-plain">Staff</span>
+              </div>
+              <div class="thr-card-messages">
+                <div class="thr-card-message thr-card-message--warning">
+                  <span class="thr-card-message-text">Section is full — wait list available</span>
+                </div>
+              </div>
+              <div class="thr-card-footer">
+                <div class="thr-card-units">3 units</div>
+                <div class="thr-card-check">
+                  <label class="thr-card-select-label">
+                    <input type="checkbox">
+                    Select
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="thr-card" tabindex="0" role="option" aria-selected="false" aria-label="PSYC 101 Introduction to Psychology">
+              <div class="thr-card-header">
+                <div class="thr-card-code-wrap">
+                  <div class="thr-card-code">PSYC 101</div>
+                  <div class="thr-card-section">001-LEC (10201)</div>
+                </div>
+                <div class="thr-card-header-center">
+                  <div class="thr-card-capacity thr-cap-open" title="Open">210/400</div>
+                </div>
+                <div class="thr-card-actions-wrap">
+                  <button type="button" class="thr-card-btn-direct">Select</button>
+                </div>
+              </div>
+              <div class="thr-card-body">
+                <div class="thr-card-title-row">
+                  <div class="thr-card-title">General Psychology</div>
+                </div>
+                <div class="thr-card-schedule">
+                  <span class="thr-card-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg></span>
+                  <span>MW · 2:30 pm – 3:45 pm</span>
+                </div>
+              </div>
+              <div class="thr-card-instructor">
+                <span class="thr-professor">
+                  <span class="thr-rating-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#4B9CD3"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                  </span>
+                  <a class="thr-link" href="#">Alex Rivera</a>
+                  <div class="thr-tooltip">
+                    <div class="thr-tooltip-header">Alex Rivera</div>
+                    <div class="thr-tooltip-row">
+                      <div class="thr-rating-box" style="background:#2e7d32">
+                        <div class="thr-rating-num">4.7</div>
+                        <div class="thr-rating-denom">/5</div>
+                      </div>
+                      <div class="thr-details">
+                        <span>Difficulty <strong>2.4</strong></span>
+                        <span>Would take again <strong>91%</strong></span>
+                      </div>
+                    </div>
+                    <div class="thr-meta">Based on 63 ratings</div>
+                  </div>
+                </span>
+              </div>
+              <div class="thr-card-footer">
+                <div class="thr-card-units">3 units</div>
+                <div class="thr-card-check">
+                  <label class="thr-card-select-label">
+                    <input type="checkbox">
+                    Select
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- List view (THR data grid) -->
+          <div class="pg-list-mock is-hidden" id="list-grid" aria-label="Enrollment_Classes" role="grid">
+            <div role="row">
+              <div role="columnheader"></div>
+              <div role="columnheader">Class</div>
+              <div role="columnheader">Description</div>
+              <div role="columnheader">Days / Time</div>
+              <div role="columnheader">Instructor</div>
+              <div role="columnheader">Status</div>
+            </div>
+            <div role="row">
+              <div role="gridcell"><input type="checkbox" checked></div>
+              <div role="rowheader"><a class="cx-MuiLink-root" href="#">COMP 560</a><div>001-LEC</div></div>
+              <div role="gridcell" class="thr-list-col-desc"><div class="MuiGrid-item">Artificial Intelligence</div></div>
+              <div role="gridcell">TuTh 5:00–6:15pm</div>
+              <div role="gridcell" class="thr-list-col-instr">
+                <span class="thr-professor">
+                  <span class="thr-rating-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#4B9CD3"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                  </span>
+                  <a class="thr-link" href="#">Jorge Silva</a>
+                </span>
+              </div>
+              <div role="gridcell">Open</div>
+            </div>
+            <div role="row">
+              <div role="gridcell"><input type="checkbox"></div>
+              <div role="rowheader"><a class="cx-MuiLink-root" href="#">MATH 233</a><div>002-LEC</div></div>
+              <div role="gridcell" class="thr-list-col-desc"><div class="MuiGrid-item">Calculus of Functions of Several Variables</div></div>
+              <div role="gridcell">MWF 10:10–11:00am</div>
+              <div role="gridcell" class="thr-list-col-instr"><span class="thr-name-plain">Jane Doe</span></div>
+              <div role="gridcell">Open</div>
+            </div>
+            <div role="row">
+              <div role="gridcell"><input type="checkbox"></div>
+              <div role="rowheader"><a class="cx-MuiLink-root" href="#">ENGL 105</a><div>014-LEC</div></div>
+              <div role="gridcell" class="thr-list-col-desc"><div class="MuiGrid-item">English Composition and Rhetoric</div></div>
+              <div role="gridcell">TuTh 12:30–1:45pm</div>
+              <div role="gridcell" class="thr-list-col-instr"><span class="thr-name-plain">Staff</span></div>
+              <div role="gridcell">Full</div>
+            </div>
+          </div>
+
+          <!-- Full visual inventory -->
+          <section class="pg-inventory" id="inventory">
+            <h2>Full visual inventory</h2>
+            <p>Everything <code>reskin.css</code> + content-area RMP styles touch. Edit CSS, refresh, judge here.</p>
+
+            <div class="pg-block">
+              <h3>Brand tokens</h3>
+              <p class="pg-desc"><code>.thr-reskin</code> custom properties</p>
+              <div class="pg-row">
+                <span class="pg-swatch"><span class="pg-dot" style="background:#13294B"></span> Carolina navy <code>#13294B</code></span>
+                <span class="pg-swatch"><span class="pg-dot" style="background:#4B9CD3"></span> Carolina blue <code>#4B9CD3</code></span>
+                <span class="pg-swatch"><span class="pg-dot" style="background:#7DB8E0"></span> Blue light</span>
+                <span class="pg-swatch"><span class="pg-dot" style="background:#1f3557"></span> Button navy <code>#1f3557</code></span>
+                <span class="pg-swatch"><span class="pg-dot" style="background:#dddfea"></span> Border <code>#dddfea</code></span>
+                <span class="pg-swatch"><span class="pg-dot" style="background:#b91c1c"></span> Danger</span>
+                <span class="pg-swatch"><span class="pg-dot" style="background:#1a1a2e"></span> Text</span>
+                <span class="pg-swatch"><span class="pg-dot" style="background:#5a6178"></span> Secondary text</span>
+              </div>
+            </div>
+
+            <div class="pg-block">
+              <h3>Page chrome</h3>
+              <p class="pg-desc">Background + <code>h1</code> under <code>.thr-reskin</code></p>
+              <div class="pg-row">
+                <span class="pg-label">Title</span>
+                <h1 style="margin:0">Shopping Cart</h1>
+              </div>
+            </div>
+
+            <div class="pg-block">
+              <h3>MUI / CX action buttons</h3>
+              <p class="pg-desc">Toolbar Save / Delete / Validate / Enroll overrides</p>
+              <div class="pg-row">
+                <span class="pg-label">Primary</span>
+                <button type="button" class="MuiButton-root MuiButton-containedPrimary"><span class="MuiButton-label">Enroll</span></button>
+                <button type="button" class="cx-MuiButton-root Primary"><span class="cx-MuiButton-label">Save</span></button>
+                <button type="button" class="MuiButton-root MuiButton-containedPrimary" disabled><span class="MuiButton-label">Disabled</span></button>
+              </div>
+              <div class="pg-row">
+                <span class="pg-label">Danger</span>
+                <button type="button" class="MuiButton-root MuiButton-outlinedSecondary"><span class="MuiButton-label">Delete</span></button>
+                <button type="button" class="MuiButton-root MuiButton-outlinedSecondary" disabled><span class="MuiButton-label">Disabled</span></button>
+              </div>
+              <div class="pg-row">
+                <span class="pg-label">Outlined</span>
+                <button type="button" class="MuiButton-root MuiButton-outlined"><span class="MuiButton-label">Validate</span></button>
+                <button type="button" class="cx-MuiButton-root"><span class="cx-MuiButton-label">Cancel</span></button>
+              </div>
+              <div class="pg-row">
+                <span class="pg-label">Icon</span>
+                <button type="button" class="MuiIconButton-root" aria-label="More">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                </button>
+              </div>
+              <div class="pg-row">
+                <span class="pg-label">Busy shimmer</span>
+                <button type="button" class="MuiButton-root MuiButton-containedPrimary" id="busy-demo"><span class="MuiButton-label">Submit</span></button>
+                <button type="button" class="MuiButton-root MuiButton-outlined" id="busy-replay"><span class="MuiButton-label">Replay</span></button>
+              </div>
+            </div>
+
+            <div class="pg-block">
+              <h3>Inputs</h3>
+              <p class="pg-desc">Search + MUI InputBase — flat 8px, same language as buttons</p>
+              <div class="pg-row">
+                <span class="pg-label">Search</span>
+                <input id="search-inventory" type="text" placeholder="Search classes in cart" style="width:280px">
+              </div>
+              <div class="pg-row">
+                <span class="pg-label">MUI field</span>
+                <div class="MuiInputBase-root" style="width:280px">
+                  <input class="MuiInputBase-input" type="text" placeholder="Autocomplete / select">
+                </div>
+              </div>
+            </div>
+
+            <div class="pg-block">
+              <h3>View toggle</h3>
+              <p class="pg-desc"><code>.thr-view-toggle</code> / <code>.thr-toggle-btn</code></p>
+              <div class="pg-row">
+                <span class="pg-label">Default</span>
+                <div class="thr-view-toggle" role="group">
+                  <button type="button" class="thr-toggle-btn thr-toggle-active" aria-pressed="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+                  </button>
+                  <button type="button" class="thr-toggle-btn" aria-pressed="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="pg-block">
+              <h3>Card grid anatomy</h3>
+              <p class="pg-desc">Default / selected / capacity / messages / checkbox / direct CTA / kebab</p>
+              <div class="pg-row" style="align-items:flex-start">
+                <div class="thr-card pg-card-mini" tabindex="0">
+                  <div class="thr-card-header">
+                    <div class="thr-card-code-wrap">
+                      <div class="thr-card-code">COMP 560</div>
+                      <div class="thr-card-section">001-LEC (12780)</div>
+                    </div>
+                    <div class="thr-card-header-center">
+                      <div class="thr-card-capacity thr-cap-open">51/120</div>
+                    </div>
+                    <div class="thr-card-actions-wrap">
+                      <button type="button" class="thr-card-btn-direct">Select</button>
+                    </div>
+                  </div>
+                  <div class="thr-card-body">
+                    <div class="thr-card-title-row"><div class="thr-card-title">Default card</div></div>
+                    <div class="thr-card-schedule"><span>TuTh · 5:00 pm – 6:15 pm</span></div>
+                  </div>
+                  <div class="thr-card-instructor">
+                    <span class="thr-professor">
+                      <span class="thr-rating-icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#4B9CD3"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                      </span>
+                      <a class="thr-link" href="#">Jorge Silva</a>
+                    </span>
+                  </div>
+                  <div class="thr-card-footer">
+                    <div class="thr-card-units">3 units</div>
+                    <div class="thr-card-check">
+                      <label class="thr-card-select-label"><input type="checkbox"> Select</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="thr-card thr-card-selected pg-card-mini" tabindex="0">
+                  <div class="thr-card-header">
+                    <div class="thr-card-code-wrap">
+                      <div class="thr-card-code">MATH 233</div>
+                      <div class="thr-card-section">002-LEC</div>
+                    </div>
+                    <div class="thr-card-header-center">
+                      <div class="thr-card-capacity thr-cap-filling">98/110</div>
+                    </div>
+                    <div class="thr-card-actions-wrap pg-kebab-open">
+                      <button type="button" class="thr-card-btn-direct">Select</button>
+                      <div class="thr-card-kebab-wrap">
+                        <button type="button" class="thr-card-kebab-btn" aria-label="More">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                        </button>
+                        <div class="thr-card-kebab-menu thr-kebab-open">
+                          <button type="button">Delete</button>
+                          <a href="#">View details</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="thr-card-body">
+                    <div class="thr-card-title-row"><div class="thr-card-title">Selected + kebab open</div></div>
+                    <div class="thr-card-schedule"><span>MWF · 10:10 am – 11:00 am</span></div>
+                  </div>
+                  <div class="thr-card-instructor">
+                    <span class="thr-professor">
+                      <span class="thr-rating-icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#4B9CD3"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                      </span>
+                      <a class="thr-link" href="#">Jane Doe</a>
+                    </span>
+                  </div>
+                  <div class="thr-card-footer">
+                    <div class="thr-card-units">4 units</div>
+                    <div class="thr-card-check">
+                      <label class="thr-card-select-label"><input type="checkbox" checked> Select</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="thr-card pg-card-mini" tabindex="0">
+                  <div class="thr-card-header">
+                    <div class="thr-card-code-wrap">
+                      <div class="thr-card-code">ENGL 105</div>
+                      <div class="thr-card-section">014-LEC</div>
+                    </div>
+                    <div class="thr-card-header-center">
+                      <div class="thr-card-capacity thr-cap-full">19/19</div>
+                    </div>
+                    <div class="thr-card-actions-wrap">
+                      <button type="button" class="thr-card-btn-direct">Waitlist</button>
+                    </div>
+                  </div>
+                  <div class="thr-card-body">
+                    <div class="thr-card-title-row"><div class="thr-card-title">Warning + error msgs</div></div>
+                    <div class="thr-card-schedule"><span>TuTh · 12:30 pm – 1:45 pm</span></div>
+                  </div>
+                  <div class="thr-card-messages">
+                    <div class="thr-card-message thr-card-message--warning"><span class="thr-card-message-text">Wait list available</span></div>
+                    <div class="thr-card-message thr-card-message--error"><span class="thr-card-message-text">Time conflict with COMP 560</span></div>
+                  </div>
+                  <div class="thr-card-footer">
+                    <div class="thr-card-units">3 units</div>
+                    <div class="thr-card-check">
+                      <label class="thr-card-select-label"><input type="checkbox"> Select</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="pg-row" style="margin-top:12px">
+                <span class="pg-label">Capacity chips</span>
+                <span class="thr-card-capacity thr-cap-open">Open</span>
+                <span class="thr-card-capacity thr-cap-filling">Filling</span>
+                <span class="thr-card-capacity thr-cap-full">Full</span>
+              </div>
+              <div class="pg-row">
+                <span class="pg-label">Card actions</span>
+                <button type="button" class="thr-card-btn-direct">Select</button>
+                <button type="button" class="thr-card-btn-direct">Enroll</button>
+                <button type="button" class="thr-card-btn-direct">Waitlist</button>
+                <button type="button" class="thr-card-kebab-btn" aria-label="Kebab">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="pg-block">
+              <h3>List view data grid</h3>
+              <p class="pg-desc"><code>[aria-label="Enrollment_Classes"]</code> — also switchable via toolbar toggle above</p>
+              <div class="pg-list-mock" aria-label="Enrollment_Classes" role="grid">
+                <div role="row">
+                  <div role="columnheader"></div>
+                  <div role="columnheader">Class</div>
+                  <div role="columnheader">Description</div>
+                  <div role="columnheader">Days / Time</div>
+                  <div role="columnheader">Instructor</div>
+                  <div role="columnheader">Status</div>
+                </div>
+                <div role="row">
+                  <div role="gridcell"><input type="checkbox"></div>
+                  <div role="rowheader"><a class="cx-MuiLink-root" href="#">COMP 110</a></div>
+                  <div role="gridcell"><div class="MuiGrid-item">Intro to Programming</div></div>
+                  <div role="gridcell">MWF 9:05–9:55am</div>
+                  <div role="gridcell">Kris Jordan</div>
+                  <div role="gridcell">Open</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pg-block">
+              <h3>RateMyProfessors badges</h3>
+              <p class="pg-desc">From <code>content.css</code> — injected into instructor cells</p>
+              <div class="pg-row">
+                <span class="pg-label">With rating</span>
+                <span class="thr-professor">
+                  <span class="thr-rating-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#4B9CD3"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                  </span>
+                  <a class="thr-link" href="#">Jorge Silva</a>
+                </span>
+              </div>
+              <div class="pg-row">
+                <span class="pg-label">No RMP data</span>
+                <span class="thr-name-plain">Unknown Instructor</span>
+              </div>
+              <div class="pg-row" style="align-items:flex-start">
+                <span class="pg-label">Tooltip</span>
+                <div class="thr-tooltip pg-tooltip-inline">
+                  <div class="thr-tooltip-header">Jorge Silva</div>
+                  <div class="thr-tooltip-row">
+                    <div class="thr-rating-box" style="background:#2e7d32">
+                      <div class="thr-rating-num">4.2</div>
+                      <div class="thr-rating-denom">/5</div>
+                    </div>
+                    <div class="thr-details">
+                      <span>Difficulty <strong>3.1</strong></span>
+                      <span>Would take again <strong>78%</strong></span>
+                    </div>
+                  </div>
+                  <div class="thr-meta">Based on 42 ratings</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pg-block">
+              <h3>Modal + detail panel</h3>
+              <p class="pg-desc">Leftover modal chrome + detail grid (tutorial removed; CSS still ships)</p>
+              <div class="thr-modal pg-modal-inline">
+                <div class="thr-modal-header">
+                  <div class="thr-modal-title">COMP 560 · Class details</div>
+                  <button type="button" class="thr-modal-close" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                  </button>
+                </div>
+                <div class="thr-modal-content">
+                  <div class="thr-detail-grid">
+                    <div class="thr-detail-col">
+                      <div class="thr-detail-heading">Information</div>
+                      <div class="thr-detail-row">
+                        <div class="thr-detail-label">Units</div>
+                        <div class="thr-detail-value">3</div>
+                      </div>
+                      <div class="thr-detail-row">
+                        <div class="thr-detail-label">Status</div>
+                        <div class="thr-detail-value">Open</div>
+                      </div>
+                      <div class="thr-detail-row thr-detail-row--long">
+                        <div class="thr-detail-label">Description</div>
+                        <div class="thr-detail-value">Introduction to artificial intelligence concepts and methods.</div>
+                      </div>
+                    </div>
+                    <div class="thr-detail-col">
+                      <div class="thr-detail-heading">Meeting</div>
+                      <div class="thr-detail-row">
+                        <div class="thr-detail-label">Days</div>
+                        <div class="thr-detail-value">TuTh</div>
+                      </div>
+                      <div class="thr-detail-row">
+                        <div class="thr-detail-label">Time</div>
+                        <div class="thr-detail-value">5:00 pm – 6:15 pm</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var cardGrid = document.getElementById('card-grid');
+      var listGrid = document.getElementById('list-grid');
+
+      document.querySelectorAll('.thr-view-toggle').forEach(function (group) {
+        group.addEventListener('click', function (e) {
+          var btn = e.target.closest('.thr-toggle-btn');
+          if (!btn) return;
+          group.querySelectorAll('.thr-toggle-btn').forEach(function (b) {
+            var on = b === btn;
+            b.classList.toggle('thr-toggle-active', on);
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+          var view = btn.getAttribute('data-view');
+          if (!view || !cardGrid || !listGrid) return;
+          var isCard = view === 'card';
+          cardGrid.classList.toggle('is-hidden', !isCard);
+          listGrid.classList.toggle('is-hidden', isCard);
+        });
+      });
+
+      document.querySelectorAll('[data-kebab]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var wrap = btn.closest('.thr-card-kebab-wrap');
+          var menu = wrap.querySelector('.thr-card-kebab-menu');
+          var open = menu.classList.toggle('thr-kebab-open');
+          if (open) {
+            var close = function (ev) {
+              if (!wrap.contains(ev.target)) {
+                menu.classList.remove('thr-kebab-open');
+                document.removeEventListener('click', close, true);
+              }
+            };
+            setTimeout(function () { document.addEventListener('click', close, true); }, 0);
+          }
+        });
+      });
+
+      document.querySelectorAll('.thr-card').forEach(function (card) {
+        var cb = card.querySelector('input[type="checkbox"]');
+        if (!cb) return;
+        cb.addEventListener('change', function () {
+          card.classList.toggle('thr-card-selected', cb.checked);
+          card.setAttribute('aria-selected', String(cb.checked));
+        });
+      });
+
+      var busy = document.getElementById('busy-demo');
+      var replay = document.getElementById('busy-replay');
+      var enroll = document.getElementById('enroll-btn');
+      function playBusy(el) {
+        if (!el) return;
+        el.classList.remove('thr-btn-busy');
+        void el.offsetWidth;
+        el.classList.add('thr-btn-busy');
+        setTimeout(function () { el.classList.remove('thr-btn-busy'); }, 700);
+      }
+      if (replay) replay.addEventListener('click', function () { playBusy(busy); });
+      if (enroll) enroll.addEventListener('click', function () { playBusy(enroll); });
+    })();
+  </script>
+</body>
+</html>
