@@ -201,16 +201,16 @@
 
 
 /* ── 3b. Icon Buttons ──
-   Same flat kebab language — square corners, no circle / clay shadow */
+   Transparent chrome — no box around chevrons / arrows */
 .thr-reskin [class*="IconButton"],
 .thr-reskin [class*="MuiIconButton"] {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
     padding: 0 !important;
     border-radius: var(--thr-btn-radius) !important;
-    border: 1px solid var(--thr-btn-border) !important;
-    background: #ffffff !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
     color: var(--thr-btn-navy) !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -220,13 +220,13 @@
 
 .thr-reskin [class*="IconButton"]:hover,
 .thr-reskin [class*="MuiIconButton"]:hover {
-    background: #f8f9fc !important;
-    border-color: #c5c9d8 !important;
+    background: rgba(31, 53, 87, 0.06) !important;
+    border-color: transparent !important;
 }
 
 .thr-reskin [class*="IconButton"]:active,
 .thr-reskin [class*="MuiIconButton"]:active {
-    background: #eef0f6 !important;
+    background: rgba(31, 53, 87, 0.10) !important;
     box-shadow: none !important;
 }
 
@@ -256,14 +256,14 @@
 
 
 /* ── 4. Inputs ──
-   Same flat language as buttons — 8px, hairline border, no glow */
+   Search / selects sit transparent — no boxed chrome */
 .thr-reskin input#search,
 .thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]),
 .thr-reskin input[type="search"],
 .thr-reskin select {
     border-radius: var(--thr-btn-radius) !important;
-    border: 1px solid var(--thr-btn-border) !important;
-    background: #ffffff !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
     color: var(--thr-btn-navy) !important;
     transition: border-color 0.15s ease, background 0.15s ease !important;
     box-shadow: none !important;
@@ -279,27 +279,26 @@
 .thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]):hover,
 .thr-reskin input[type="search"]:hover,
 .thr-reskin select:hover {
-    border-color: #c5c9d8 !important;
-    background: #f8f9fc !important;
+    border-color: transparent !important;
+    background: rgba(31, 53, 87, 0.04) !important;
 }
 
 .thr-reskin input#search:focus,
 .thr-reskin input[type="text"]:not([class*="MuiInputBase"]):not([class*="MuiAutocomplete"]):focus,
 .thr-reskin input[type="search"]:focus,
 .thr-reskin select:focus {
-    border-color: var(--thr-carolina-blue) !important;
+    border-color: transparent !important;
     box-shadow: none !important;
-    outline: 2px solid rgba(75, 156, 211, 0.25) !important;
-    outline-offset: 1px !important;
-    background: #ffffff !important;
+    outline: none !important;
+    background: rgba(31, 53, 87, 0.04) !important;
 }
 
 /* Material-UI Complex Inputs (Autocomplete, Select, TextFields) */
 .thr-reskin .cx-MuiInputBase-root,
 .thr-reskin .MuiInputBase-root {
     border-radius: var(--thr-btn-radius) !important;
-    background: #ffffff !important;
-    border: 1px solid var(--thr-btn-border) !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
     transition: border-color 0.15s ease, background 0.15s ease !important;
     box-shadow: none !important;
     min-height: 40px !important;
@@ -319,17 +318,17 @@
 
 .thr-reskin .cx-MuiInputBase-root:hover,
 .thr-reskin .MuiInputBase-root:hover {
-    border-color: #c5c9d8 !important;
-    background: #f8f9fc !important;
+    border-color: transparent !important;
+    background: rgba(31, 53, 87, 0.04) !important;
 }
 
 .thr-reskin .cx-MuiInputBase-root.cx-Mui-focused,
 .thr-reskin .MuiInputBase-root.Mui-focused,
 .thr-reskin .cx-MuiInputBase-root.cx-Mui-focused:hover,
 .thr-reskin .MuiInputBase-root.Mui-focused:hover {
-    border-color: var(--thr-carolina-blue) !important;
+    border-color: transparent !important;
     box-shadow: none !important;
-    background: #ffffff !important;
+    background: rgba(31, 53, 87, 0.04) !important;
 }
 
 /* Ensure inner inputs stay transparent and don't double-render the styles */
